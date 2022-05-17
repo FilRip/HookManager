@@ -1,0 +1,6 @@
+/HookManager/bin
+/HookManager/obj
+/HookManagerSample/bin
+/HookManagerSample/obj
+*.user
+/.vs/
