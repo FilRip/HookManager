@@ -65,7 +65,7 @@ namespace HookManager.Helpers
             return handle;
         }
 
-        internal static void RemplaceMethodeManagee(this MethodInfo methodToReplace, MethodInfo methodToInject)
+        internal static void RemplaceMethodeManagee(this MethodBase methodToReplace, MethodBase methodToInject)
         {
             if (IntPtr.Size == 4)
             {
