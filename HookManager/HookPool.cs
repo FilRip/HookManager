@@ -53,11 +53,6 @@ namespace HookManager
             /// </summary>
             COMPILEE,
             /// <summary>
-            /// Work In Progress, incomplet
-            /// </summary>
-            //[Obsolete("Cette méthode n'est pas encore fonctionnelle")]
-            DYNAMIC,
-            /// <summary>
             /// Mode rapide, pas gourmant en RAM, mais incompatible si lancé depuis un déboggeur
             /// </summary>
             BUILDER,

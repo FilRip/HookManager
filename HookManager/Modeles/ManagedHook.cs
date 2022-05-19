@@ -9,6 +9,8 @@ using System.Runtime.CompilerServices;
 
 using HookManager.Helpers;
 
+using MonoMod.RuntimeDetour;
+
 namespace HookManager.Modeles
 {
     /// <summary>
@@ -24,6 +26,7 @@ namespace HookManager.Modeles
         private object _maClasseDynamique;
         private MethodInfo _methodeParente;
         private bool _actif;
+        private ConstructorInfo _constructeur;
 
         private readonly bool _estMethodeDecoration;
         private readonly MethodInfo _methodeAvant;
@@ -117,6 +120,15 @@ namespace HookManager.Modeles
             Prepare(autoActive);
         }
 
+        internal ManagedHook(int numHook, ConstructorInfo constructeur, MethodInfo methodeDeRemplacement, bool autoActive = true)
+        {
+            _numHook = numHook;
+            _constructeur = constructeur;
+            _methodeTo = methodeDeRemplacement;
+
+            Prepare(autoActive);
+        }
+
         private void Prepare(bool autoActiver)
         {
             if (_estMethodeDecoration)
@@ -127,34 +139,30 @@ namespace HookManager.Modeles
                 if (_methodeApres != null)
                     RuntimeHelpers.PrepareMethod(_methodeApres.MethodHandle);
             }
+            else if (EstConstructeur)
+            {
+                RuntimeHelpers.PrepareMethod(_methodeTo.MethodHandle);
+                RuntimeHelpers.PrepareMethod(_constructeur.MethodHandle);
+            }
             else
             {
                 RuntimeHelpers.PrepareMethod(_methodeFrom.MethodHandle);
                 RuntimeHelpers.PrepareMethod(_methodeTo.MethodHandle);
             }
 
-            switch (HookPool.GetInstance().TypeMethode)
-            {
-                case HookPool.TYPE_METHODE.AUTO:
-                    if (Debugger.IsAttached)
-                        ConstruireManagedMethode();
-                    else
-                        ConstruireMethodeBuilder();
-                    break;
-                case HookPool.TYPE_METHODE.COMPILEE:
-                    ConstruireManagedMethode();
-                    break;
-                case HookPool.TYPE_METHODE.DYNAMIC:
-                    ConstruireMethodeDynamic();
-                    break;
-                case HookPool.TYPE_METHODE.BUILDER:
-                    ConstruireMethodeBuilder();
-                    break;
-                default:
-                    throw new Exception("Aucun type de méthode de remplacement à utiliser spécifié");
-            }
+            if (HookPool.GetInstance().TypeMethode == HookPool.TYPE_METHODE.COMPILEE || Debugger.IsAttached)
+                ConstruireManagedMethode();
+            else
+                ConstruireMethodeBuilder();
 
-            if (HookPool.GetInstance().TypeMethode != HookPool.TYPE_METHODE.DYNAMIC)
+            if (EstConstructeur)
+            {
+                _methodeParente = _constructeur.CreateILCopy();
+
+                _methodePasserelle = _maClasseDynamique.GetType().GetMethod($"{HookPool.NOM_METHODE}{_numHook}", BindingFlags.NonPublic | BindingFlags.Static);
+                RuntimeHelpers.PrepareMethod(_methodePasserelle.MethodHandle);
+            }
+            else
             {
                 _methodePasserelle = _maClasseDynamique.GetType().GetMethod($"{HookPool.NOM_METHODE}{_numHook}", BindingFlags.NonPublic | BindingFlags.Static);
                 RuntimeHelpers.PrepareMethod(_methodePasserelle.MethodHandle);
@@ -233,6 +241,14 @@ namespace HookManager.Modeles
         }
 
         /// <summary>
+        /// Retourne si oui ou non cette substitution est sur un constructeur
+        /// </summary>
+        public bool EstConstructeur
+        {
+            get { return _constructeur != null; }
+        }
+
+        /// <summary>
         /// Appel la méthode d'origine
         /// </summary>
         /// <param name="instance">Instance de l'objet d'origine (null si méthode static)</param>
@@ -260,10 +276,13 @@ namespace HookManager.Modeles
                 return _methodeParente.Invoke(null, (args.Length == 0 ? null : args));
         }
 
-        #region Version DynamicMethod
+        #region Version MethodBuilder
 
-        private void ConstruireMethodeDynamic()
+        private void ConstruireMethodeBuilder()
         {
+            TypeBuilder tb = HookPool.GetInstance().Constructeur(_numHook);
+            ILGenerator ilGen;
+
             List<Type> listeTypeParametres = new();
             // Si ce n'est pas une static, déjà, on peut ajouter en premier paramètre l'instance de l'objet
             if (!EstStatic)
@@ -272,24 +291,20 @@ namespace HookManager.Modeles
                 foreach (ParameterInfo parameterInfo in ParametresMethode)
                     listeTypeParametres.Add(parameterInfo.ParameterType);
 
-            ILGenerator ilGen;
-            _methodeParente = new DynamicMethod(HookPool.NOM_METHODE_PARENTE + _numHook.ToString(), MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, (TypeDeRetour == typeof(void) ? typeof(void) : typeof(object)), listeTypeParametres.ToArray(), typeof(ManagedHook), false);
-            ilGen = ((DynamicMethod)_methodeParente).GetILGenerator();
+            MethodBuilder mbParente = tb.DefineMethod(HookPool.NOM_METHODE_PARENTE + _numHook.ToString(), MethodAttributes.Private | MethodAttributes.Static, (TypeDeRetour == typeof(void) ? typeof(void) : typeof(object)), listeTypeParametres.ToArray());
+            ilGen = mbParente.GetILGenerator();
             ilGen.Emit(OpCodes.Ldstr, "Impossible d'appeler la méthode parente");
             ilGen.Emit(OpCodes.Newobj, typeof(Exception).GetConstructor(new Type[] { typeof(string) }));
             ilGen.Emit(OpCodes.Throw);
 
-            _methodePasserelle = new DynamicMethod(HookPool.NOM_METHODE + _numHook.ToString(), MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, (TypeDeRetour == typeof(void) ? typeof(void) : typeof(object)), listeTypeParametres.ToArray(), typeof(ManagedHook), false);
-            ilGen = ((DynamicMethod)_methodePasserelle).GetILGenerator();
-            GenererEmitMethodePasserelle(ref ilGen, _methodeParente);
-        }
+            MethodBuilder mb = tb.DefineMethod(HookPool.NOM_METHODE + _numHook.ToString(), MethodAttributes.Private | MethodAttributes.Static, (TypeDeRetour == typeof(void) ? typeof(void) : typeof(object)), listeTypeParametres.ToArray());
+            if (!EstStatic)
+            {
+                ParameterBuilder pb = mb.DefineParameter(1, ParameterAttributes.Optional, "monThis");
+                pb.SetConstant(null);
+            }
+            ilGen = mb.GetILGenerator(256);
 
-        #endregion
-
-        #region Version MethodBuilder
-
-        private void GenererEmitMethodePasserelle(ref ILGenerator ilGen, MethodInfo methodeParente)
-        {
             ilGen.DeclareLocal(typeof(ManagedHook)); // Note : variable local : monHook
             ilGen.DeclareLocal(typeof(List<object>)); // Note : variable local : listeParametres
             ilGen.DeclareLocal(typeof(bool)); // Note : variable local pour les "if"
@@ -463,7 +478,7 @@ namespace HookManager.Modeles
                     ilGen.Emit(OpCodes.Ldarg, numParam++);
                 }
             }
-            ilGen.Emit(OpCodes.Call, methodeParente);
+            ilGen.Emit(OpCodes.Call, mbParente);
             // return <Resultat>; // Note : on retourne le résultat de la méthode précédemment exécutée, si ce n'est pas une void/Sub bien sur
             if (TypeDeRetour != typeof(void))
             {
@@ -476,35 +491,7 @@ namespace HookManager.Modeles
             }
             // Note : Marque de fin de la méthode
             ilGen.Emit(OpCodes.Ret);
-        }
 
-        private void ConstruireMethodeBuilder()
-        {
-            TypeBuilder tb = HookPool.GetInstance().Constructeur(_numHook);
-            ILGenerator ilGen;
-
-            List<Type> listeTypeParametres = new();
-            // Si ce n'est pas une static, déjà, on peut ajouter en premier paramètre l'instance de l'objet
-            if (!EstStatic)
-                listeTypeParametres.Add(typeof(object));
-            if (ParametresMethode != null && ParametresMethode.Length > 0)
-                foreach (ParameterInfo parameterInfo in ParametresMethode)
-                    listeTypeParametres.Add(parameterInfo.ParameterType);
-
-            MethodBuilder mbParente = tb.DefineMethod(HookPool.NOM_METHODE_PARENTE + _numHook.ToString(), MethodAttributes.Private | MethodAttributes.Static, (TypeDeRetour == typeof(void) ? typeof(void) : typeof(object)), listeTypeParametres.ToArray());
-            ilGen = mbParente.GetILGenerator();
-            ilGen.Emit(OpCodes.Ldstr, "Impossible d'appeler la méthode parente");
-            ilGen.Emit(OpCodes.Newobj, typeof(Exception).GetConstructor(new Type[] { typeof(string) }));
-            ilGen.Emit(OpCodes.Throw);
-
-            MethodBuilder mb = tb.DefineMethod(HookPool.NOM_METHODE + _numHook.ToString(), MethodAttributes.Private | MethodAttributes.Static, (TypeDeRetour == typeof(void) ? typeof(void) : typeof(object)), listeTypeParametres.ToArray());
-            if (!EstStatic)
-            {
-                ParameterBuilder pb = mb.DefineParameter(1, ParameterAttributes.Optional, "monThis");
-                pb.SetConstant(null);
-            }
-            ilGen = mb.GetILGenerator(256);
-            GenererEmitMethodePasserelle(ref ilGen, mbParente);
             Type type = tb.CreateType();
             _maClasseDynamique = Activator.CreateInstance(type);
         }
@@ -610,7 +597,7 @@ namespace HookManager.Modeles
                     if ((j > 0) || (!EstStatic)) corps += ", ";
                     corps += ParametresMethode[j].ParameterType.ToString() + $" param{(j + 1)} = null";
                 }
-            if ((_estMethodeDecoration) && (TypeDeRetour != typeof(void)))
+            if ((_estMethodeDecoration) && (TypeDeRetour != typeof(void)) && !EstConstructeur)
                 corps += $", object param{j + 1} = null";
 
             corps += ")" + Environment.NewLine;

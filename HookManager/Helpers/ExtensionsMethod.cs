@@ -89,21 +89,7 @@ namespace HookManager.Helpers
                     int cibleRead = Marshal.ReadInt32(new IntPtr(ptrCible));
                     int cibleOffset = cibleRead + 1;
 
-                    int val;
-                    IntPtr pointeur = new(cibleOffset);
-                    if (HookPool.GetInstance().TypeMethode == HookPool.TYPE_METHODE.DYNAMIC)
-                    {
-                        if (methodToReplace is DynamicMethod)
-                            pointeur = new IntPtr(ptrCible);
-                        if (methodToInject is DynamicMethod)
-                            val = Marshal.ReadInt32(new IntPtr(ptrInject));
-                        else
-                            val = injRead + 5 + Marshal.ReadInt32(new IntPtr(injOffset)) - (cibleRead + 5);
-                    }
-                    else
-                        val = injRead + 5 + Marshal.ReadInt32(new IntPtr(injOffset)) - (cibleRead + 5);
-
-                    Marshal.WriteInt32(pointeur, val);
+                    Marshal.WriteInt32(new(cibleOffset), injRead + 5 + Marshal.ReadInt32(new IntPtr(injOffset)) - (cibleRead + 5));
                 }
                 else
                     Marshal.WriteInt32(new IntPtr(ptrCible), Marshal.ReadInt32(new IntPtr(ptrInject)));
@@ -131,23 +117,9 @@ namespace HookManager.Helpers
                     long cibleRead = Marshal.ReadInt64(new IntPtr(ptrCible));
                     long cibleOffset = cibleRead + 1;
 
-                    int val;
-                    IntPtr pointeur = new(cibleOffset);
-                    if (HookPool.GetInstance().TypeMethode == HookPool.TYPE_METHODE.DYNAMIC)
-                    {
-                        if (methodToReplace is DynamicMethod)
-                            pointeur = new IntPtr(ptrCible);
-                        if (methodToInject is DynamicMethod)
-                            val = Marshal.ReadInt32(new IntPtr(ptrInject));
-                        else
-                            val = (int)injRead + 5 + Marshal.ReadInt32(new IntPtr(injOffset)) - ((int)cibleRead + 5);
-                    }
-                    else
-                        val = (int)injRead + 5 + Marshal.ReadInt32(new IntPtr(injOffset)) - ((int)cibleRead + 5);
-
                     // Le debugger VisualStudio est en 32bits, on écrit un pointeur 32 bits (malgré qu'on soit dans un environnement 64bits)
                     // Attention : VisualStudio 2022 (et +) sont en 64bits... possibilité de devoir modifier cela
-                    Marshal.WriteInt32(pointeur, val);
+                    Marshal.WriteInt32(new(cibleOffset), (int)injRead + 5 + Marshal.ReadInt32(new IntPtr(injOffset)) - ((int)cibleRead + 5));
                 }
                 else
                     Marshal.WriteInt64(new IntPtr(ptrCible), Marshal.ReadInt64(new IntPtr(ptrInject)));
