@@ -177,7 +177,7 @@ namespace HookManager.Modeles
             }
         }
 
-        private ParameterInfo[] ParametresMethodes
+        private ParameterInfo[] ParametresMethode
         {
             get
             {
@@ -268,8 +268,8 @@ namespace HookManager.Modeles
             // Si ce n'est pas une static, déjà, on peut ajouter en premier paramètre l'instance de l'objet
             if (!EstStatic)
                 listeTypeParametres.Add(typeof(object));
-            if (ParametresMethodes != null && ParametresMethodes.Length > 0)
-                foreach (ParameterInfo parameterInfo in ParametresMethodes)
+            if (ParametresMethode != null && ParametresMethode.Length > 0)
+                foreach (ParameterInfo parameterInfo in ParametresMethode)
                     listeTypeParametres.Add(parameterInfo.ParameterType);
 
             ILGenerator ilGen;
@@ -324,11 +324,11 @@ namespace HookManager.Modeles
                 ilGen.Emit(OpCodes.Ldarg_0);
                 ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.Add)));
             }
-            if (ParametresMethodes != null && ParametresMethodes.Length > 0)
+            if (ParametresMethode != null && ParametresMethode.Length > 0)
             {
                 // listeParametres.Add(<Param>); // Note : <Param> est/sont le(s) paramètre(s) supplémentaires de ma méthode
                 int numParam = 1;
-                foreach (ParameterInfo pi in ParametresMethodes)
+                foreach (ParameterInfo pi in ParametresMethode)
                 {
                     ilGen.Emit(OpCodes.Ldloc_1);
                     ilGen.Emit(OpCodes.Ldarg, numParam++);
@@ -339,9 +339,9 @@ namespace HookManager.Modeles
             // Si la méthode destination a plus de paramètre que la méthode source, ont les spécifie, en mettant null
             if (_estMethodeDecoration)
             {
-                if (_methodeAvant != null && _methodeAvant.GetParameters().Length - 1 > ParametresMethodes.Length)
+                if (_methodeAvant != null && _methodeAvant.GetParameters().Length - 1 > ParametresMethode.Length)
                 {
-                    for (int i = ParametresMethodes.Length + 1; i <= _methodeAvant.GetParameters().Length - 1; i++)
+                    for (int i = ParametresMethode.Length + 1; i <= _methodeAvant.GetParameters().Length - 1; i++)
                     {
                         // listeParametres.Add(null);
                         ilGen.Emit(OpCodes.Ldloc_1);
@@ -352,9 +352,9 @@ namespace HookManager.Modeles
             }
             else
             {
-                if (_methodeTo.GetParameters().Length - 1 > ParametresMethodes.Length)
+                if (_methodeTo.GetParameters().Length - 1 > ParametresMethode.Length)
                 {
-                    for (int i = ParametresMethodes.Length + 1; i <= _methodeTo.GetParameters().Length - 1; i++)
+                    for (int i = ParametresMethode.Length + 1; i <= _methodeTo.GetParameters().Length - 1; i++)
                     {
                         // listeParametres.Add(null);
                         ilGen.Emit(OpCodes.Ldloc_1);
@@ -396,7 +396,7 @@ namespace HookManager.Modeles
                     ilGen.Emit(OpCodes.Ldarg_0);
                 else
                     ilGen.Emit(OpCodes.Ldnull);
-                if (ParametresMethodes.Length > 0)
+                if (ParametresMethode.Length > 0)
                 {
                     ilGen.Emit(OpCodes.Ldloc_1);
                     ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.ToArray), Type.EmptyTypes));
@@ -455,10 +455,10 @@ namespace HookManager.Modeles
             // InvokeParente_<NumHook>(params); // Note, on construit le nom de la méthode en concaténant le numHook. Note 2 : params est la liste des paramètres de la méthode d'origine (remplacée) si elle en a, bien sur
             if (!EstStatic)
                 ilGen.Emit(OpCodes.Ldarg_0);
-            if (ParametresMethodes != null && ParametresMethodes.Length > 0)
+            if (ParametresMethode != null && ParametresMethode.Length > 0)
             {
                 int numParam = 1;
-                foreach (ParameterInfo pi in ParametresMethodes)
+                foreach (ParameterInfo pi in ParametresMethode)
                 {
                     ilGen.Emit(OpCodes.Ldarg, numParam++);
                 }
@@ -487,8 +487,8 @@ namespace HookManager.Modeles
             // Si ce n'est pas une static, déjà, on peut ajouter en premier paramètre l'instance de l'objet
             if (!EstStatic)
                 listeTypeParametres.Add(typeof(object));
-            if (ParametresMethodes != null && ParametresMethodes.Length > 0)
-                foreach (ParameterInfo parameterInfo in ParametresMethodes)
+            if (ParametresMethode != null && ParametresMethode.Length > 0)
+                foreach (ParameterInfo parameterInfo in ParametresMethode)
                     listeTypeParametres.Add(parameterInfo.ParameterType);
 
             MethodBuilder mbParente = tb.DefineMethod(HookPool.NOM_METHODE_PARENTE + _numHook.ToString(), MethodAttributes.Private | MethodAttributes.Static, (TypeDeRetour == typeof(void) ? typeof(void) : typeof(object)), listeTypeParametres.ToArray());
@@ -528,11 +528,11 @@ namespace HookManager.Modeles
                 corps += "[System.Diagnostics.DebuggerNonUserCode()]" + Environment.NewLine;
             corps += "private static ";
             corps += $"{(TypeDeRetour == typeof(void) ? "void" : "object")} {HookPool.NOM_METHODE}{_numHook}({(EstStatic ? "" : "object monThis = null")}";
-            if (ParametresMethodes.Length > 0)
-                for (int i = 0; i < ParametresMethodes.Length; i++)
+            if (ParametresMethode.Length > 0)
+                for (int i = 0; i < ParametresMethode.Length; i++)
                 {
                     if ((!EstStatic) || (i > 0)) corps += ", ";
-                    corps += ParametresMethodes[i].ParameterType.ToString() + $" param{(i + 1)} = null";
+                    corps += ParametresMethode[i].ParameterType.ToString() + $" param{(i + 1)} = null";
                 }
             corps += ")" + Environment.NewLine;
             corps += "{" + Environment.NewLine;
@@ -543,19 +543,19 @@ namespace HookManager.Modeles
             if (!EstStatic) corps += "param.Add(monThis);" + Environment.NewLine;
             corps += "}" + Environment.NewLine;
 
-            if (ParametresMethodes.Length > 0)
-                for (int i = 0; i < ParametresMethodes.Length; i++)
+            if (ParametresMethode.Length > 0)
+                for (int i = 0; i < ParametresMethode.Length; i++)
                     corps += $"param.Add(param{(i + 1)});" + Environment.NewLine;
 
             if (_estMethodeDecoration)
             {
-                if (_methodeAvant != null && _methodeAvant.GetParameters().Length - (EstStatic ? 0 : 1) > ParametresMethodes.Length)
-                    for (int i = 0; i < _methodeAvant.GetParameters().Length - (EstStatic ? 0 : 1) - ParametresMethodes.Length; i++)
+                if (_methodeAvant != null && _methodeAvant.GetParameters().Length - (EstStatic ? 0 : 1) > ParametresMethode.Length)
+                    for (int i = 0; i < _methodeAvant.GetParameters().Length - (EstStatic ? 0 : 1) - ParametresMethode.Length; i++)
                         corps += "param.Add(null);" + Environment.NewLine;
             }
             else
-                if (_methodeTo.GetParameters().Length - (EstStatic ? 0 : 1) > ParametresMethodes.Length)
-                    for (int i = 0; i < _methodeTo.GetParameters().Length - (EstStatic ? 0 : 1) - ParametresMethodes.Length; i++)
+                if (_methodeTo.GetParameters().Length - (EstStatic ? 0 : 1) > ParametresMethode.Length)
+                    for (int i = 0; i < _methodeTo.GetParameters().Length - (EstStatic ? 0 : 1) - ParametresMethode.Length; i++)
                         corps += "param.Add(null);" + Environment.NewLine;
 
             corps += "if (myHook.Actif)" + Environment.NewLine;
@@ -566,7 +566,7 @@ namespace HookManager.Modeles
                     corps += $"myHook.{nameof(MethodeAvant)}.Invoke({(EstStatic ? "null" : "monThis")}, param.ToArray());" + Environment.NewLine;
                 if (TypeDeRetour != typeof(void))
                     corps += "object retour = ";
-                corps += $"myHook.AppelMethodeParente({(EstStatic ? "null" : "monThis")}, {(ParametresMethodes.Length > 0 ? ", param.ToArray()" : "null")});" + Environment.NewLine;
+                corps += $"myHook.AppelMethodeParente({(EstStatic ? "null" : "monThis")}, {(ParametresMethode.Length > 0 ? ", param.ToArray()" : "null")});" + Environment.NewLine;
                 if (_methodeApres != null)
                 {
                     if (TypeDeRetour != typeof(void))
@@ -588,8 +588,8 @@ namespace HookManager.Modeles
             if (TypeDeRetour != typeof(void))
                 corps += "return ";
             corps += $"{HookPool.NOM_METHODE_PARENTE}{_numHook}({(EstStatic ? "" : "monThis")}";
-            if (ParametresMethodes.Length > 0)
-                for (int i = 0; i < ParametresMethodes.Length; i++)
+            if (ParametresMethode.Length > 0)
+                for (int i = 0; i < ParametresMethode.Length; i++)
                 {
                     if ((i > 0) || (!EstStatic)) corps += ", ";
                     corps += $"param{(i + 1)}";
@@ -604,11 +604,11 @@ namespace HookManager.Modeles
             corps += $"{(TypeDeRetour == typeof(void) ? "void" : "object")} {HookPool.NOM_METHODE_PARENTE}{_numHook}(";
             if (!EstStatic) corps += "object monThis";
             int j = 0;
-            if (ParametresMethodes.Length > 0)
-                for (j = 0; j < ParametresMethodes.Length; j++)
+            if (ParametresMethode.Length > 0)
+                for (j = 0; j < ParametresMethode.Length; j++)
                 {
                     if ((j > 0) || (!EstStatic)) corps += ", ";
-                    corps += ParametresMethodes[j].ParameterType.ToString() + $" param{(j + 1)} = null";
+                    corps += ParametresMethode[j].ParameterType.ToString() + $" param{(j + 1)} = null";
                 }
             if ((_estMethodeDecoration) && (TypeDeRetour != typeof(void)))
                 corps += $", object param{j + 1} = null";

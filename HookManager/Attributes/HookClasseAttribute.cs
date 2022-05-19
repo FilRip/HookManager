@@ -3,7 +3,7 @@
 namespace HookManager.Attributes
 {
     /// <summary>
-    /// Attribut pour remplacer, toutes ou partie, des méthodes de ce type de manière automatique (au démarrage, si <see cref="HookPool.PrepareMethodesTaggees(bool)"/> est appelée)
+    /// Attribut pour remplacer, toutes ou partie, des méthodes de ce type de manière automatique (au démarrage, si <see cref="HookPool.InitialiseTousHookParAttribut(bool)"/> est appelée)
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     public class HookClasseAttribute : HookManagerAttribute

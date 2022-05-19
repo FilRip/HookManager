@@ -3,7 +3,7 @@
 namespace HookManager.Attributes
 {
     /// <summary>
-    /// Attributs pour remplacer le getter et/ou le setter d'une propriété par une autre automatiquement (au démarrage, si <see cref="HookPool.PrepareMethodesTaggees(bool)"/> est appelée)
+    /// Attributs pour remplacer le getter et/ou le setter d'une propriété par une autre automatiquement (au démarrage, si <see cref="HookPool.InitialiseTousHookParAttribut(bool)"/> est appelée)
     /// </summary>
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class HookProprieteAttribute : HookManagerAttribute

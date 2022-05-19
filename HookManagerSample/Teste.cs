@@ -6,9 +6,14 @@ namespace HookManagerSample
 {
     public class Teste
     {
+        public Teste()
+        {
+            Console.WriteLine($"Mon constructeur {this}");
+        }
+
         private string _valeur = "Instance1";
 
-        [HookPropriete(Classe = typeof(TesteHook), GetMethode = nameof(TesteHook.GetValeur))]
+        //[HookPropriete(Classe = typeof(TesteHook), GetMethode = nameof(TesteHook.GetValeur))]
         public string Valeur
         {
             get { return _valeur; }

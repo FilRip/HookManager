@@ -23,6 +23,8 @@ namespace HookManager
         private Dictionary<MethodInfo, GACHook> _listeGACHook;
         private Dictionary<NativeMethod, NativeHook> _listeNativeHook;
         private Dictionary<int, MethodeRemplacementHook> _listeRemplacement;
+        private Dictionary<int, ManagedHook> _listeDecoration;
+
         private readonly object _lockNumHook = new();
 
         private int _nbHook;
@@ -42,12 +44,12 @@ namespace HookManager
         {
             /// <summary>
             /// Mode automatique. Le système choisit pour vous :<br/>
-            /// Avec un Debugger attaché : il passe en mode <see cref="COMPILEE"/> (plus lent, plus gourmant en RAM (mais reste acceptable), mais compatible lancé depuis un déboggeur)<br/>
+            /// Avec un Debugger attaché : il passe en mode <see cref="COMPILEE"/> (plus lent, plus gourmant en RAM (mais reste acceptable, 4Ko par méthode substituée), mais compatible lancé depuis un déboggeur)<br/>
             /// Sinon, on est en mode <see cref="BUILDER"/> : vitesse maximum (divisée par 10 par rapport au mode COMPILEE) et pas gourmant en RAM
             /// </summary>
             AUTO,
             /// <summary>
-            /// Mode lent, gourmant en RAM (mais reste acceptable), mais compatible lancé depuis un déboggeur
+            /// Mode lent, gourmant en RAM (mais reste acceptable, 4Ko par méthode substituée), mais compatible lancé depuis un déboggeur
             /// </summary>
             COMPILEE,
             /// <summary>
@@ -80,10 +82,11 @@ namespace HookManager
 
         private void InitSingleton()
         {
-            _listeHook = new Dictionary<int, ManagedHook>();
-            _listeGACHook = new Dictionary<MethodInfo, GACHook>();
-            _listeNativeHook = new Dictionary<NativeMethod, NativeHook>();
-            _listeRemplacement = new Dictionary<int, MethodeRemplacementHook>();
+            _listeHook = new();
+            _listeGACHook = new();
+            _listeNativeHook = new();
+            _listeRemplacement = new();
+            _listeDecoration = new();
 
             _nbHook = 0;
             _filtres = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
@@ -325,6 +328,8 @@ namespace HookManager
                 throw new DoNotHookMyLib();
             if (methodeAvant == null && methodeApres == null)
                 throw new DecorationMethodesException(methodeAvant?.Name, methodeApres?.Name);
+            if (MethodeDejaDecoree(methodeFrom))
+                throw new MethodeAlreadyDecorated(methodeFrom.Name);
             if (methodeAvant != null)
                 VerifierCorrespondances(methodeFrom, methodeAvant);
             if (methodeApres != null)
@@ -393,17 +398,20 @@ namespace HookManager
             if (methodeFrom.DeclaringType.Assembly == Assembly.GetExecutingAssembly())
                 throw new DoNotHookMyLib();
             if (MethodeDejaRemplacee(methodeFrom))
-                throw new MethodAlreadyHooked();
+                throw new MethodAlreadyHooked(methodeFrom.Name);
             if (methodeFrom.DeclaringType.Assembly.GlobalAssemblyCache)
                 throw new CantHookGAC();
             ProcessorArchitecture paFrom, paTo;
-            paFrom = methodeFrom.DeclaringType.Assembly.GetName().ProcessorArchitecture;
-            paTo = methodeTo.DeclaringType.Assembly.GetName().ProcessorArchitecture;
-            if ((paFrom == ProcessorArchitecture.X86 && (paTo == ProcessorArchitecture.Amd64 || paTo == ProcessorArchitecture.IA64)) ||
-                ((paFrom == ProcessorArchitecture.Amd64 || paFrom == ProcessorArchitecture.IA64) && paTo == ProcessorArchitecture.X86))
-                throw new AssemblyPlatformeDifferente(paFrom, paTo);
-            if (paFrom == ProcessorArchitecture.Arm || paTo == ProcessorArchitecture.Arm)
-                throw new PlateformeNonSupportee(ProcessorArchitecture.Arm);
+            if (testMethodeFrom && testMethodeTo)
+            {
+                paFrom = methodeFrom.DeclaringType.Assembly.GetName().ProcessorArchitecture;
+                paTo = methodeTo.DeclaringType.Assembly.GetName().ProcessorArchitecture;
+                if ((paFrom == ProcessorArchitecture.X86 && (paTo == ProcessorArchitecture.Amd64 || paTo == ProcessorArchitecture.IA64)) ||
+                    ((paFrom == ProcessorArchitecture.Amd64 || paFrom == ProcessorArchitecture.IA64) && paTo == ProcessorArchitecture.X86))
+                    throw new AssemblyPlatformeDifferente(paFrom, paTo);
+                if (paFrom == ProcessorArchitecture.Arm || paTo == ProcessorArchitecture.Arm)
+                    throw new PlateformeNonSupportee(ProcessorArchitecture.Arm);
+            }
         }
 
         /// <summary>
@@ -459,7 +467,7 @@ namespace HookManager
             if (methodFrom.ModuleName == Assembly.GetExecutingAssembly().GetName()?.Name + ".dll")
                 throw new DoNotHookMyLib();
             if (_listeNativeHook.Keys.Any(hook => hook.ModuleName == methodFrom.ModuleName && hook.Method == methodFrom.Method))
-                throw new MethodAlreadyHooked();
+                throw new MethodAlreadyHooked(methodFrom.Method);
 
             NativeHook natHook = new(methodFrom, methodTo);
             if (natHook != null)
@@ -513,7 +521,7 @@ namespace HookManager
             if (methodFrom.DeclaringType?.Assembly == Assembly.GetExecutingAssembly())
                 throw new DoNotHookMyLib();
             if (_listeGACHook.Keys.Contains(methodFrom))
-                throw new MethodAlreadyHooked();
+                throw new MethodAlreadyHooked(methodFrom.Name);
 
             GACHook gachook = new(methodFrom, methodTo);
             if (gachook != null)
@@ -577,13 +585,18 @@ namespace HookManager
             }
         }
 
-        private bool MethodeDejaRemplacee(MethodInfo methodFrom)
+        private bool MethodeDejaDecoree(MethodBase methodeFrom)
+        {
+            return (_listeDecoration.Values.Any(hook => hook.EstMethodesDecoration && hook.FromMethode == methodeFrom));
+        }
+
+        private bool MethodeDejaRemplacee(MethodBase methodFrom)
         {
             return (_listeHook.Values.Any(hook => hook.FromMethode == methodFrom) || _listeRemplacement.Values.Any(hook => hook.MethodeRemplacee == methodFrom));
         }
 
         /// <summary>
-        /// Retourne une substitution par rapport à son numéro (max. 4 milliard)
+        /// Retourne une substitution par rapport à son numéro (max. 2 milliard et quelques (un entier signé 32 bits)
         /// Attention, cette méthode est obligatoire, même si il n'y a pas de référence à cette méthode indiquée, elle est utilisée en interne par ManagedHook
         /// </summary>
         /// <param name="numHook">Numéro de la substitution</param>
@@ -594,6 +607,7 @@ namespace HookManager
 
         /// <summary>
         /// Retourne la substitution de la méthode de remplacement en cours
+        /// Ou de la décoration d'une méthode en cours
         /// </summary>
         public ManagedHook RetourneHook()
         {
@@ -781,7 +795,7 @@ namespace HookManager
         /// Parcours tous les Assembly et prépare toutes les substitutions de toutes les méthodes qui ont l'attribut HookManager
         /// </summary>
         /// <param name="throwError">Si une erreur se produit, faut-il stoper et indiquer l'erreur (par défaut), ou ne rien faire</param>
-        public void PrepareMethodesTaggees(bool throwError = true)
+        public void InitialiseTousHookParAttribut(bool throwError = true)
         {
             Dictionary<Type, string> dejaTraitee = new();
             foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())

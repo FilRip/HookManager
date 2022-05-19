@@ -27,7 +27,7 @@ namespace HookManager.Exceptions
         {
             get
             {
-                return $"Le type de retour de la méthode à crocheter n'est pas le même, ou est incompatible, avec la méthode servant de crochetage. Type de la méthode source : {_typeSource}, type de la méthode destination : {_typeDestination}";
+                return $"Le type de retour de la méthode à substituer n'est pas le même, ou est incompatible, avec la méthode servant de substitution. Type de la méthode source : {_typeSource}, type de la méthode destination : {_typeDestination}";
             }
         }
 

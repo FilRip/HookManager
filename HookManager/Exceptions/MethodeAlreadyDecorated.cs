@@ -3,17 +3,17 @@
 namespace HookManager.Exceptions
 {
     /// <summary>
-    /// Erreur, la méthode que vous tentez de remplacer est déjà remplacée, consultez HookPool pour la liste
+    /// Erreur, la méthode que vous tentez de décorer est déjà décorée, consultez HookPool pour la liste
     /// </summary>
     [Serializable()]
-    public class MethodAlreadyHooked : HookManagerException
+    public class MethodeAlreadyDecorated : HookManagerException
     {
         private readonly string _nomMethode;
 
         /// <summary>
-        /// Erreur, la méthode que vous tentez de remplacer est déjà remplacée, consultez HookPool pour la liste
+        /// Erreur, la méthode que vous tentez de décorer est déjà décorée, consultez HookPool pour la liste
         /// </summary>
-        public MethodAlreadyHooked(string nomMethode) : base()
+        public MethodeAlreadyDecorated(string nomMethode) : base()
         {
             _nomMethode = nomMethode;
         }
@@ -23,7 +23,7 @@ namespace HookManager.Exceptions
         {
             get
             {
-                return $"Cette méthode ({_nomMethode}) est déjà substituée. On ne peut substituer qu'une seule fois chaque méthode.";
+                return $"Cette méthode ({_nomMethode}) est déjà décorée. On ne peut décorer qu'une seule fois chaque méthode.";
             }
         }
 

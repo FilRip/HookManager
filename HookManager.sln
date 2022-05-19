@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HookManager", "HookManager\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HookManagerSample", "HookManagerSample\HookManagerSample.csproj", "{71E81AF8-0A60-4CF1-B3EE-39D13BD58278}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoMod.Common", "MonoMod.Common-master\MonoMod.Common.csproj", "{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,18 @@ Global
 		{71E81AF8-0A60-4CF1-B3EE-39D13BD58278}.Release|x64.Build.0 = Release|x64
 		{71E81AF8-0A60-4CF1-B3EE-39D13BD58278}.Release|x86.ActiveCfg = Release|x86
 		{71E81AF8-0A60-4CF1-B3EE-39D13BD58278}.Release|x86.Build.0 = Release|x86
+		{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}.Debug|x64.Build.0 = Debug|Any CPU
+		{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}.Debug|x86.Build.0 = Debug|Any CPU
+		{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}.Release|x64.ActiveCfg = Release|Any CPU
+		{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}.Release|x64.Build.0 = Release|Any CPU
+		{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}.Release|x86.ActiveCfg = Release|Any CPU
+		{D08C41CC-6121-47FB-AEBF-57A1D94DD09E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

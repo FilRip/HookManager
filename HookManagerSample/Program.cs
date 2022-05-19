@@ -21,7 +21,7 @@ namespace HookManagerSample
             System.Diagnostics.Stopwatch sw = new();
             sw.Start();
             // Remplace automatiquement toutes les méthodes avec attribut HookManager
-            HookPool.GetInstance().PrepareMethodesTaggees();
+            HookPool.GetInstance().InitialiseTousHookParAttribut();
             sw.Stop();
             Console.WriteLine("Durée génération : " + sw.ElapsedMilliseconds.ToString());
             /*Console.WriteLine("Liste des assembly :");
@@ -47,7 +47,7 @@ namespace HookManagerSample
             Console.WriteLine("");
 
             Console.WriteLine("Test désactive");
-            HookPool.GetInstance().RetourneHook(typeof(Teste).GetMethod(nameof(Teste.EcrireConsole), BindingFlags.Instance | BindingFlags.Public)).Desactive();
+            ((ManagedHook)(HookPool.GetInstance().RetourneHook(typeof(Teste).GetMethod(nameof(Teste.EcrireConsole), BindingFlags.Instance | BindingFlags.Public)))).Desactive();
             monTest.EcrireConsole();
             
             Console.WriteLine("Test hook api windows (o/n) ?");
@@ -79,14 +79,32 @@ namespace HookManagerSample
             Console.WriteLine("");
 
             Console.WriteLine("Change propriété");
-            //Console.WriteLine("Propriété avant : " + monTest.Valeur);
-            //HookPool.GetInstance().AjouterHook(typeof(Teste).GetProperty(nameof(Teste.Valeur), BindingFlags.Public | BindingFlags.Instance).GetGetMethod(), typeof(TesteHook).GetMethod(nameof(TesteHook.GetValeur), BindingFlags.Public | BindingFlags.Static));
+            Console.WriteLine("Propriété avant : " + monTest.Valeur);
+            HookPool.GetInstance().AjouterHook(typeof(Teste).GetProperty(nameof(Teste.Valeur), BindingFlags.Public | BindingFlags.Instance).GetGetMethod(), typeof(TesteHook).GetMethod(nameof(TesteHook.GetValeur), BindingFlags.Public | BindingFlags.Static));
             Console.WriteLine("Propriété après : " + monTest.Valeur);
             Console.WriteLine("");
 
             Console.WriteLine("Test décoration de méthode");
             monTest.TestDeco();
             Console.WriteLine("");
+
+            ConstructorInfo ci = typeof(Teste).GetConstructors()[0];
+
+            /*Console.WriteLine("Test décoration constructeur");
+            MethodInfo miAvant = typeof(TesteHook).GetMethod(nameof(TesteHook.AvantConstructeur), BindingFlags.Static | BindingFlags.Public);
+            MethodInfo miApres = typeof(TesteHook).GetMethod(nameof(TesteHook.ApresConstructeur), BindingFlags.Static | BindingFlags.Public);
+            HookPool.GetInstance().AjouterDecorationConstructeur(ci, miAvant, miApres);*/
+
+            /*Console.WriteLine("Test remplacement constructeur");
+            MethodInfo miNewConstructeur = typeof(TesteHook).GetMethod(nameof(TesteHook.RemplaceConstructeur), BindingFlags.Static | BindingFlags.Public);
+            ManagedHook mh = HookPool.GetInstance().AjouterHookConstructeur(ci, miNewConstructeur);*/
+
+            /*monTest = new();
+            Console.WriteLine("");*/
+
+            /*Console.WriteLine("Désactive remplacement constructeur");
+            ch.Desactiver();
+            monTest = new();*/
 
             Console.WriteLine(Environment.NewLine + "Appuyez sur <Entrer> pour quitter...");
             Console.ReadLine();

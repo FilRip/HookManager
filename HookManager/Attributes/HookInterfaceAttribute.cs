@@ -3,7 +3,7 @@
 namespace HookManager.Attributes
 {
     /// <summary>
-    /// Attributs pour remplacer les méthodes d'une interface (chez toutes les classes l'implémentant) par une autre automatiquement (au démarrage, si <see cref="HookPool.PrepareMethodesTaggees(bool)"/> est appelée)
+    /// Attributs pour remplacer les méthodes d'une interface (chez toutes les classes l'implémentant) par une autre automatiquement (au démarrage, si <see cref="HookPool.InitialiseTousHookParAttribut(bool)"/> est appelée)
     /// </summary>
     [AttributeUsage(AttributeTargets.Interface, AllowMultiple = true)]
     public class HookInterfaceAttribute : HookManagerAttribute

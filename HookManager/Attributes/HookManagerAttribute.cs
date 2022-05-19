@@ -12,7 +12,7 @@ namespace HookManager.Attributes
         /// </summary>
         public Type Classe;
         /// <summary>
-        /// Activer (ou non) automatiquement (au démarrage, si <see cref="HookPool.PrepareMethodesTaggees(bool)"/> est appelée)
+        /// Activer (ou non) automatiquement (au démarrage, si <see cref="HookPool.InitialiseTousHookParAttribut(bool)"/> est appelée)
         /// </summary>
         public bool AutoActiver = true;
     }

@@ -10,6 +10,24 @@ namespace HookManagerSample
 #pragma warning disable IDE0060, IDE0079
     public class TesteHook
     {
+        public static object RemplaceConstructeur(object instance)
+        {
+            Console.WriteLine($"Constructeur remplacé, {instance}");
+            ManagedHook mh = HookPool.GetInstance().RetourneHook();
+            mh.AppelMethodeParente(instance);
+            return instance;
+        }
+
+        public static void AvantConstructeur(object instance)
+        {
+            Console.WriteLine($"Hooked Avant Constructeur, {instance}");
+        }
+
+        public static void ApresConstructeur(object instance)
+        {
+            Console.WriteLine($"Hooked Apres Constructeur, {instance}");
+        }
+
         public static string GetValeur(object instance)
         {
             return "Instance2";
@@ -67,6 +85,8 @@ namespace HookManagerSample
         public static void ExecuteAvant(object instance)
         {
             Console.WriteLine("Avant corps");
+            ManagedHook mh = HookPool.GetInstance().RetourneHook();
+            mh.AppelMethodeParente(instance, null);
         }
 
         public static void ExecuteApres(object instance)
