@@ -19,15 +19,15 @@ namespace HookManager
     /// </summary>
     public sealed class HookPool
     {
-        private Dictionary<int, ManagedHook> _listeHook;
+        private Dictionary<uint, ManagedHook> _listeHook;
         private Dictionary<MethodInfo, GACHook> _listeGACHook;
         private Dictionary<NativeMethod, NativeHook> _listeNativeHook;
-        private Dictionary<int, MethodeRemplacementHook> _listeRemplacement;
-        private Dictionary<int, ManagedHook> _listeDecoration;
+        private Dictionary<uint, MethodeRemplacementHook> _listeRemplacement;
+        private Dictionary<uint, ManagedHook> _listeDecoration;
 
         private readonly object _lockNumHook = new();
 
-        private int _nbHook;
+        private uint _nbHook;
         private static HookPool _instance;
         private BindingFlags _filtres;
         private bool _modeDebugInterne = false;
@@ -37,26 +37,6 @@ namespace HookManager
         internal const string NOM_CLASSE = "HookClasse_";
         internal const string NOM_METHODE = "HookMethode_";
         internal const string NOM_METHODE_PARENTE = "InvokeParente_";
-
-        internal TYPE_METHODE TypeMethode = TYPE_METHODE.AUTO;
-
-        internal enum TYPE_METHODE
-        {
-            /// <summary>
-            /// Mode automatique. Le système choisit pour vous :<br/>
-            /// Avec un Debugger attaché : il passe en mode <see cref="COMPILEE"/> (plus lent, plus gourmant en RAM (mais reste acceptable, 4Ko par méthode substituée), mais compatible lancé depuis un déboggeur)<br/>
-            /// Sinon, on est en mode <see cref="BUILDER"/> : vitesse maximum (divisée par 10 par rapport au mode COMPILEE) et pas gourmant en RAM
-            /// </summary>
-            AUTO,
-            /// <summary>
-            /// Mode lent, gourmant en RAM (mais reste acceptable, 4Ko par méthode substituée), mais compatible lancé depuis un déboggeur
-            /// </summary>
-            COMPILEE,
-            /// <summary>
-            /// Mode rapide, pas gourmant en RAM, mais incompatible si lancé depuis un déboggeur
-            /// </summary>
-            BUILDER,
-        }
 
         internal HookPool()
         {
@@ -338,7 +318,7 @@ namespace HookManager
                     throw new MissingDefaultArgument(methodeApres.Name);
             }
 
-            int numHook = IncrNumHook();
+            uint numHook = IncrNumHook();
             ManagedHook mh = new(numHook, methodeFrom, methodeAvant, methodeApres, autoActiver);
             if (mh != null)
                 _listeHook.Add(numHook, mh);
@@ -355,11 +335,54 @@ namespace HookManager
         {
             VerificationCommunes(methodeFrom, methodeTo);
             VerifierCorrespondances(methodeFrom, methodeTo);
-            int numHook = IncrNumHook();
+            uint numHook = IncrNumHook();
             ManagedHook hook = new(numHook, methodeFrom, methodeTo, autoActiver);
             if (hook != null)
                 _listeHook.Add(numHook, hook);
             return hook;
+        }
+
+        public ManagedHook AjouterHook(ConstructorInfo constructeurARemplacer, MethodInfo methodeTo, bool autoActiver = true)
+        {
+            if (constructeurARemplacer == null)
+                throw new ArgumentNullException(nameof(constructeurARemplacer));
+            // TODO : Faire les vérification de bases et de correspondances quand c'est un constructeur
+            /*VerificationCommunes(constructeurARemplacer, methodeTo);
+            VerifierCorrespondances(constructeurARemplacer, methodeTo);*/
+            uint numHook = IncrNumHook();
+            ManagedHook hook = new(numHook, constructeurARemplacer, methodeTo, autoActiver);
+            if (hook != null)
+                _listeHook.Add(numHook, hook);
+            return hook;
+        }
+
+        public ManagedHook AjouterDecorationConstructeur(ConstructorInfo constructeurADecorer, MethodInfo methodeAvant, MethodInfo methodeApres, bool autoActiver = true)
+        {
+            if (constructeurADecorer == null)
+                throw new ArgumentNullException(nameof(constructeurADecorer));
+            if (constructeurADecorer.DeclaringType?.Assembly == Assembly.GetExecutingAssembly())
+                throw new DoNotHookMyLib();
+            if (methodeAvant == null && methodeApres == null)
+                throw new DecorationMethodesException(methodeAvant?.Name, methodeApres?.Name);
+            if (MethodeDejaDecoree(constructeurADecorer))
+                throw new MethodeAlreadyDecorated(constructeurADecorer.Name);
+            // TODO : Faire les vérification de correspondance avec un constructeur
+            /*if (methodeAvant != null)
+                VerifierCorrespondances(constructeurADecorer, methodeAvant);*/
+            if (methodeApres != null)
+            {
+                int nbParam = 1;
+                if (constructeurADecorer.IsStatic)
+                    nbParam++;
+                if (methodeApres.GetParameters().Length < nbParam)
+                    throw new MissingDefaultArgument(methodeApres.Name);
+            }
+
+            uint numHook = IncrNumHook();
+            ManagedHook mh = new(numHook, constructeurADecorer, methodeAvant, methodeApres, autoActiver);
+            if (mh != null)
+                _listeHook.Add(numHook, mh);
+            return mh;
         }
 
         /// <summary>
@@ -419,7 +442,7 @@ namespace HookManager
         {
             VerificationCommunes(methodeFrom, methodeTo);
             VerifierCorrespondances(methodeFrom, methodeTo);
-            int numHook = IncrNumHook();
+            uint numHook = IncrNumHook();
             MethodeRemplacementHook hook = new(numHook, methodeFrom, methodeTo, autoActiver);
             if (hook != null)
                 _listeRemplacement.Add(numHook, hook);
@@ -442,7 +465,7 @@ namespace HookManager
             return AjouterRemplacement(miFrom, miTo, autoActiver);
         }
 
-        internal int IncrNumHook()
+        internal uint IncrNumHook()
         {
             lock (_lockNumHook)
                 return ++_nbHook;
@@ -950,7 +973,7 @@ namespace HookManager
         private ModuleBuilder _moduleBuilder;
         private AssemblyBuilder _asmBuilder;
 
-        internal TypeBuilder Constructeur(int numHook)
+        internal TypeBuilder Constructeur(uint numHook)
         {
             if (_moduleBuilder == null)
             {

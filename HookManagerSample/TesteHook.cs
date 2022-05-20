@@ -13,8 +13,9 @@ namespace HookManagerSample
         public static object RemplaceConstructeur(object instance)
         {
             Console.WriteLine($"Constructeur remplacé, {instance}");
-            ManagedHook mh = HookPool.GetInstance().RetourneHook();
-            mh.AppelMethodeParente(instance);
+            // On peut appeler l'ancien constructeur avec ces 2 lignes :
+            /*ManagedHook mh = HookPool.GetInstance().RetourneHook();
+            mh.AppelMethodeParente(instance);*/
             return instance;
         }
 

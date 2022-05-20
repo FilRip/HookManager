@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using HookManager.Exceptions;
@@ -53,33 +51,14 @@ namespace HookManager.Helpers
                 return methode.MethodHandle.Value.ToInt64() + IntPtr.Size;
         }
 
-        /// <summary>
-        /// Retourne le pointeur d'une méthode créée dynamiquement
-        /// </summary>
-        /// <param name="dynamicMethod">DynamicMethod créée</param>
-        internal static RuntimeMethodHandle GetRuntimeMethodHandle(this DynamicMethod dynamicMethod)
-        {
-            MethodInfo mi = typeof(DynamicMethod).GetMethod("GetMethodDescriptor", BindingFlags.Instance | BindingFlags.NonPublic);
-            RuntimeMethodHandle handle = (RuntimeMethodHandle)mi.Invoke(dynamicMethod, null);
-            RuntimeHelpers.PrepareMethod(handle);
-            return handle;
-        }
-
         internal static void RemplaceMethodeManagee(this MethodBase methodToReplace, MethodBase methodToInject)
         {
             if (IntPtr.Size == 4)
             {
                 int ptrInject, ptrCible;
 
-                if (methodToReplace is DynamicMethod methodeDynamic)
-                    ptrCible = methodeDynamic.GetRuntimeMethodHandle().GetFunctionPointer().ToInt32();
-                else
-                    ptrCible = methodToReplace.GetPointeurMethode_x86();
-
-                if (methodToInject is DynamicMethod methodeDynamic2)
-                    ptrInject = methodeDynamic2.GetRuntimeMethodHandle().GetFunctionPointer().ToInt32();
-                else
-                    ptrInject = methodToInject.GetPointeurMethode_x86();
+                ptrCible = methodToReplace.GetPointeurMethode_x86();
+                ptrInject = methodToInject.GetPointeurMethode_x86();
 
                 if (Debugger.IsAttached)
                 {
@@ -98,16 +77,8 @@ namespace HookManager.Helpers
             {
                 long ptrInject, ptrCible;
 
-                if (methodToReplace is DynamicMethod methodeDynamic)
-                    ptrCible = methodeDynamic.GetRuntimeMethodHandle().GetFunctionPointer().ToInt64();
-                else
-                    ptrCible = methodToReplace.GetPointeurMethode_x64();
-
-                if (methodToInject is DynamicMethod methodeDynamic2)
-                    ptrInject = methodeDynamic2.GetRuntimeMethodHandle().GetFunctionPointer().ToInt64();
-                else
-                    ptrInject = methodToInject.GetPointeurMethode_x64();
-
+                ptrCible = methodToReplace.GetPointeurMethode_x64();
+                ptrInject = methodToInject.GetPointeurMethode_x64();
 
                 if (Debugger.IsAttached)
                 {

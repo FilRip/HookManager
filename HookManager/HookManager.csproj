@@ -129,12 +129,6 @@
     <Compile Include="Modeles\NativeHook.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\MonoMod.Common-master\MonoMod.Common.csproj">
-      <Project>{d08c41cc-6121-47fb-aebf-57a1d94dd09e}</Project>
-      <Name>MonoMod.Common</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

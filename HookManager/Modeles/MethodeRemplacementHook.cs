@@ -11,13 +11,13 @@ namespace HookManager.Modeles
     public sealed class MethodeRemplacementHook
     {
         private readonly MethodInfo _methodFrom, _methodTo;
-        private readonly int _numHook;
+        private readonly uint _numHook;
         private bool _actif;
 
         /// <summary>
         /// Numéro identifiant la substitution dans le HookPool
         /// </summary>
-        public int NumHook
+        public uint NumHook
         {
             get
             {
@@ -47,7 +47,7 @@ namespace HookManager.Modeles
             }
         }
 
-        internal MethodeRemplacementHook(int numHook, MethodInfo methodeSource, MethodInfo methodeDestination, bool autoActiver = true)
+        internal MethodeRemplacementHook(uint numHook, MethodInfo methodeSource, MethodInfo methodeDestination, bool autoActiver = true)
         {
             _numHook = numHook;
             _methodFrom = methodeSource;

@@ -23,7 +23,7 @@ namespace HookManager.Exceptions
         {
             get
             {
-                return $"Cette méthode ({_nomMethode}) est déjà décorée. On ne peut décorer qu'une seule fois chaque méthode.";
+                return $"Cette méthode ({_nomMethode}) est déjà décorée (ou constructeur). On ne peut décorer qu'une seule fois chaque méthode (ou constructeur).";
             }
         }
 
