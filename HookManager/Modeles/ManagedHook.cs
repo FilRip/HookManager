@@ -191,14 +191,14 @@ namespace HookManager.Modeles
                 IntPtr ptrPasserelle;
                 if (IntPtr.Size == 4)
                 {
-                    _ptrConstructeur = new IntPtr((int)_constructeur.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructeur.MethodHandle.GetFunctionPointer() + 1) + 1 + IntPtr.Size);
-                    ptrPasserelle = new IntPtr((int)_methodePasserelle.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodePasserelle.MethodHandle.GetFunctionPointer() + 1) + 1 + IntPtr.Size);
+                    _ptrConstructeur = new IntPtr((int)_constructeur.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructeur.MethodHandle.GetFunctionPointer() + 1) + 5);
+                    ptrPasserelle = new IntPtr((int)_methodePasserelle.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodePasserelle.MethodHandle.GetFunctionPointer() + 1) + 5);
                     _nouveauPtrX86 = (int)((long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint)));
                 }
                 else
                 {
-                    _ptrConstructeur = new IntPtr((long)_constructeur.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructeur.MethodHandle.GetFunctionPointer() + 1) + 1 + IntPtr.Size);
-                    ptrPasserelle = new IntPtr((long)_methodePasserelle.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodePasserelle.MethodHandle.GetFunctionPointer() + 1) + 1 + IntPtr.Size);
+                    _ptrConstructeur = new IntPtr((long)_constructeur.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructeur.MethodHandle.GetFunctionPointer() + 1) + 5);
+                    ptrPasserelle = new IntPtr((long)_methodePasserelle.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodePasserelle.MethodHandle.GetFunctionPointer() + 1) + 5);
                     _nouveauPtrX64 = (long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint));
                 }
                 _opOriginal = Marshal.ReadByte(_ptrConstructeur);
