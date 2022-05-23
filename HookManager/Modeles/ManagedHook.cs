@@ -198,7 +198,9 @@ namespace HookManager.Modeles
                     }
                     else
                     {
-                        throw new NotImplementedException();
+                        _ptrConstructeur = _constructeur.MethodHandle.GetFunctionPointer();
+                        ptrPasserelle = _methodePasserelle.MethodHandle.GetFunctionPointer();
+                        _nouveauPtr = (uint)(int)((long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint)));
                     }
                 }
                 else
@@ -211,7 +213,9 @@ namespace HookManager.Modeles
                     }
                     else
                     {
-                        throw new NotImplementedException();
+                        _ptrConstructeur = _constructeur.MethodHandle.GetFunctionPointer();
+                        ptrPasserelle = _methodePasserelle.MethodHandle.GetFunctionPointer();
+                        _nouveauPtr = (uint)(int)((long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint)));
                     }
                 }
                 if (!WinAPI.VirtualProtect(_ptrConstructeur, (IntPtr)5, 0x40, out _))

@@ -37,7 +37,8 @@ namespace HookManager.Exceptions
             {
                 return $"Vous ne pouvez pas substituer la méthode '{_nomMethode}' de l'assembly '{_nomAssembly}', l'optimiseur JIT est activé avec un débuggeur attaché." + Environment.NewLine +
                     "Décochez le JIT Optimiseur dans les propriétés du projet de cet assembly avant recompilation, ou détacher le débuggeur." + Environment.NewLine +
-                    "Cette configuration ne supporte pas non plus les méthodes retournant une valeur (différent de void ou Sub en VB). Décochez l'optimiseur JIT ou utilisez AjouterGACHook";
+                    "Cette configuration ne supporte pas non plus les méthodes retournant une valeur (différent de void ou Sub en VB). Décochez l'optimiseur JIT ou utilisez AjouterGACHook" + Environment.NewLine +
+                    "Il n'est pas possible non plus de substituer un constructeur avec le JIT activé";
             }
         }
 

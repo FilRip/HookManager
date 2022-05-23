@@ -348,14 +348,13 @@ namespace HookManager
         /// <param name="constructeurARemplacer">Constructeur à remplacer</param>
         /// <param name="methodeTo">Méthode remplacant le constructeur</param>
         /// <param name="autoActiver">Active ou non tout de suite le remplacement</param>
-        [Obsolete("Ne marche pas sans debugger attaché", true)]
+        /// <remarks>L'appel à la méthode parente ne supporte pas le multi-threads</remarks>
         public ManagedHook AjouterHook(ConstructorInfo constructeurARemplacer, MethodInfo methodeTo, bool autoActiver = true)
         {
             if (constructeurARemplacer == null)
                 throw new ArgumentNullException(nameof(constructeurARemplacer));
-            // TODO : Faire les vérification de bases et de correspondances quand c'est un constructeur
-            /*VerificationCommunes(constructeurARemplacer, methodeTo);
-            VerifierCorrespondances(constructeurARemplacer, methodeTo);*/
+            VerificationCommunes(constructeurARemplacer, methodeTo);
+            VerifierCorrespondances(constructeurARemplacer, methodeTo);
             uint numHook = IncrNumHook();
             ManagedHook hook = new(numHook, constructeurARemplacer, methodeTo, autoActiver);
             if (hook != null)
@@ -372,7 +371,7 @@ namespace HookManager
         /// <param name="methodeAvant">Méthode à exécuter avant (si besoin)</param>
         /// <param name="methodeApres">Méthode à exécuter après (si besoin)</param>
         /// <param name="autoActiver">Active ou non tout de suite la décoration</param>
-        [Obsolete("Ne marche pas sans debugger attaché", true)]
+        /// <remarks>Cette opération ne supporte pas le multi-threads</remarks>
         public ManagedHook AjouterDecorationConstructeur(ConstructorInfo constructeurADecorer, MethodInfo methodeAvant, MethodInfo methodeApres, bool autoActiver = true)
         {
             if (constructeurADecorer == null)
@@ -383,9 +382,8 @@ namespace HookManager
                 throw new DecorationMethodesException(methodeAvant?.Name, methodeApres?.Name);
             if (MethodeDejaDecoree(constructeurADecorer))
                 throw new MethodeAlreadyDecorated(constructeurADecorer.Name);
-            // TODO : Faire les vérification de correspondance avec un constructeur
-            /*if (methodeAvant != null)
-                VerifierCorrespondances(constructeurADecorer, methodeAvant);*/
+            if (methodeAvant != null)
+                VerifierCorrespondances(constructeurADecorer, methodeAvant);
             if (methodeApres != null)
             {
                 int nbParam = 1;
@@ -418,7 +416,7 @@ namespace HookManager
             return AjouterHook(miSource, miDest, autoActiver);
         }
 
-        private void VerificationCommunes(MethodInfo methodeFrom, MethodInfo methodeTo, bool testMethodeFrom = true, bool testMethodeTo = true)
+        private void VerificationCommunes(MethodBase methodeFrom, MethodInfo methodeTo, bool testMethodeFrom = true, bool testMethodeTo = true)
         {
             if ((methodeFrom == null) && (testMethodeFrom))
                 throw new ArgumentNullException(nameof(methodeFrom));
@@ -428,7 +426,9 @@ namespace HookManager
                 throw new CantHookDynamicMethod(methodeFrom.Name);
             if (methodeFrom.DeclaringType.Assembly.IsJITOptimizerEnabled() && Debugger.IsAttached)
                 throw new CantHookJITOptimized(methodeFrom.DeclaringType.Assembly?.GetName()?.Name);
-            if (methodeFrom.DeclaringType.Assembly.IsJITOptimizerEnabled() && methodeFrom.ReturnType != typeof(void))
+            if (methodeFrom.DeclaringType.Assembly.IsJITOptimizerEnabled() && methodeFrom is MethodInfo && ((MethodInfo)methodeFrom).ReturnType != typeof(void))
+                throw new CantHookJITOptimized(methodeFrom.DeclaringType.Assembly?.GetName()?.Name, methodeFrom.Name);
+            if (methodeFrom.DeclaringType.Assembly.IsJITOptimizerEnabled() && methodeFrom.IsConstructor)
                 throw new CantHookJITOptimized(methodeFrom.DeclaringType.Assembly?.GetName()?.Name, methodeFrom.Name);
             if (methodeFrom.DeclaringType.Assembly == Assembly.GetExecutingAssembly())
                 throw new DoNotHookMyLib();
@@ -586,15 +586,18 @@ namespace HookManager
             return AjouterGACHook(miSource, miDest, autoActiver);
         }
 
-        private static void VerifierCorrespondances(MethodInfo methodFrom, MethodInfo methodTo)
+        private static void VerifierCorrespondances(MethodBase methodFrom, MethodInfo methodTo)
         {
             if (!methodTo.IsStatic)
                 throw new MethodDestinationNotStatic();
 
-            if (methodFrom.ReturnType != methodTo.ReturnType)
+            if (methodFrom is MethodInfo miFrom)
             {
-                if (methodFrom.ReturnType == typeof(void) || methodTo.ReturnType == typeof(void))
-                    throw new WrongReturnType(methodFrom.ReturnType, methodTo.ReturnType);
+                if (miFrom.ReturnType != methodTo.ReturnType)
+                {
+                    if (miFrom.ReturnType == typeof(void) || methodTo.ReturnType == typeof(void))
+                        throw new WrongReturnType(miFrom.ReturnType, methodTo.ReturnType);
+                }
             }
 
             if (methodFrom.GetParameters().Length > 0)
