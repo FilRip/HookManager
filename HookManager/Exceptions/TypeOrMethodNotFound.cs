@@ -17,7 +17,7 @@ namespace HookManager.Exceptions
         /// </summary>
         /// <param name="leType">Nom du type dans lequel la méthode à été recherchée</param>
         /// <param name="laMethode">Nom de la méthode recherchée (non trouvée)</param>
-        public TypeOrMethodNotFound(string leType, string laMethode) : base()
+        internal TypeOrMethodNotFound(string leType, string laMethode) : base()
         {
             _type = leType;
             _methode = laMethode;

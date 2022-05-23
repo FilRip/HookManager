@@ -15,7 +15,7 @@ namespace HookManager.Exceptions
         /// </summary>
         /// <param name="nbParamSource">Nombre de paramètres de la méthode à remplacer</param>
         /// <param name="nbParamDestination">Nombre de paramètres de la méthode de remplacement</param>
-        public NotEnoughArgument(int nbParamSource, int nbParamDestination) : base()
+        internal NotEnoughArgument(int nbParamSource, int nbParamDestination) : base()
         {
             _nbParamSource = nbParamSource;
             _nbParamDestination = nbParamDestination;

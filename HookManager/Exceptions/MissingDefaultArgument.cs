@@ -18,7 +18,7 @@ namespace HookManager.Exceptions
         /// </summary>
         /// <param name="nomMethode">Nom de la méthode de remplacement</param>
         /// <param name="GAC">Est-ce le remplacement d'une méthode d'un type dans le GAC (Global Assembly Cache)</param>
-        public MissingDefaultArgument(string nomMethode, bool GAC = false) : base()
+        internal MissingDefaultArgument(string nomMethode, bool GAC = false) : base()
         {
             _nomMethode = nomMethode;
             _gac = GAC;

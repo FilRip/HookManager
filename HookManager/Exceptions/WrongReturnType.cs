@@ -16,7 +16,7 @@ namespace HookManager.Exceptions
         /// </summary>
         /// <param name="typeSource">Type d'origine</param>
         /// <param name="typeDestination">Type de remplacement</param>
-        public WrongReturnType(Type typeSource, Type typeDestination) : base()
+        internal WrongReturnType(Type typeSource, Type typeDestination) : base()
         {
             _typeSource = typeSource;
             _typeDestination = typeDestination;

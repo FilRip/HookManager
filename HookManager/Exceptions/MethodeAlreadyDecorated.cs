@@ -13,7 +13,7 @@ namespace HookManager.Exceptions
         /// <summary>
         /// Erreur, la méthode que vous tentez de décorer est déjà décorée, consultez HookPool pour la liste
         /// </summary>
-        public MethodeAlreadyDecorated(string nomMethode) : base()
+        internal MethodeAlreadyDecorated(string nomMethode) : base()
         {
             _nomMethode = nomMethode;
         }

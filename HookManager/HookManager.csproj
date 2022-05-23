@@ -105,6 +105,7 @@
     <Compile Include="Exceptions\CantHookJITOptimized.cs" />
     <Compile Include="Exceptions\DecorationMethodesException.cs" />
     <Compile Include="Exceptions\DoNotHookMyLib.cs" />
+    <Compile Include="Exceptions\ErreurRePaginationMemoireException.cs" />
     <Compile Include="Exceptions\HookManagerException.cs" />
     <Compile Include="Exceptions\MethodAlreadyHooked.cs" />
     <Compile Include="Exceptions\MethodDestinationNotStatic.cs" />

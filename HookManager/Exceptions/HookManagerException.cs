@@ -8,5 +8,8 @@ namespace HookManager.Exceptions
     [Serializable()]
     public abstract class HookManagerException : Exception
     {
+        internal HookManagerException() : base()
+        {
+        }
     }
 }

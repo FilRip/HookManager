@@ -8,6 +8,10 @@ namespace HookManager.Exceptions
     [Serializable()]
     public class DoNotHookMyLib : HookManagerException
     {
+        internal DoNotHookMyLib() : base()
+        {
+        }
+
         /// <inheritdoc/>
         public override string Message
         {

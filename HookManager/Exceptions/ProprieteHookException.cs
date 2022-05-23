@@ -59,7 +59,7 @@ namespace HookManager.Exceptions
         /// <summary>
         /// Une erreur est subvenue lors de la tentative de substituer une propriété
         /// </summary>
-        public ProprieteHookException(string proprieteSource, string methodeGet, string methodeSet, CODE_ERREUR_PROPRIETE_HOOK codeErreur) : base()
+        internal ProprieteHookException(string proprieteSource, string methodeGet, string methodeSet, CODE_ERREUR_PROPRIETE_HOOK codeErreur) : base()
         {
             _proprieteSource = proprieteSource;
             _methodeGet = methodeGet;

@@ -15,7 +15,7 @@ namespace HookManager.Exceptions
         /// Erreur, impossible de substituer une méthode créée dynamiquement pendant l'exécution<br/>
         /// Pour l'instant, cette implémentation est en cours
         /// </summary>
-        public CantHookDynamicMethod(string nomMethode) : base()
+        internal CantHookDynamicMethod(string nomMethode) : base()
         {
             _nomMethod = nomMethode;
         }

@@ -8,6 +8,10 @@ namespace HookManager.Exceptions
     [Serializable()]
     public class MethodDestinationNotStatic : HookManagerException
     {
+        internal MethodDestinationNotStatic() : base()
+        {
+        }
+
         /// <inheritdoc/>
         public override string Message
         {

@@ -14,7 +14,7 @@ namespace HookManager.Exceptions
         /// Erreur, le type fournit, pour un Remplacement de toutes ou parties des méthodes d'une interface, n'est pas un type d'Interface
         /// </summary>
         /// <param name="TypeFournit">Type fournit</param>
-        public NotInterface(Type TypeFournit) : base()
+        internal NotInterface(Type TypeFournit) : base()
         {
             _type = TypeFournit;
         }

@@ -33,8 +33,7 @@ namespace HookManager.Modeles
 
         private byte _opOriginal;
         private int _ptrOriginal;
-        private int _nouveauPtrX86;
-        private long _nouveauPtrX64;
+        private uint _nouveauPtr;
         private IntPtr _ptrConstructeur;
 
         private readonly object _threadSafe = new();
@@ -191,16 +190,32 @@ namespace HookManager.Modeles
                 IntPtr ptrPasserelle;
                 if (IntPtr.Size == 4)
                 {
-                    _ptrConstructeur = new IntPtr((int)_constructeur.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructeur.MethodHandle.GetFunctionPointer() + 1) + 5);
-                    ptrPasserelle = new IntPtr((int)_methodePasserelle.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodePasserelle.MethodHandle.GetFunctionPointer() + 1) + 5);
-                    _nouveauPtrX86 = (int)((long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint)));
+                    if (Debugger.IsAttached)
+                    {
+                        _ptrConstructeur = new IntPtr((int)_constructeur.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructeur.MethodHandle.GetFunctionPointer() + 1) + 5);
+                        ptrPasserelle = new IntPtr((int)_methodePasserelle.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodePasserelle.MethodHandle.GetFunctionPointer() + 1) + 5);
+                        _nouveauPtr = (uint)(int)((long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint)));
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
                 }
                 else
                 {
-                    _ptrConstructeur = new IntPtr((long)_constructeur.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructeur.MethodHandle.GetFunctionPointer() + 1) + 5);
-                    ptrPasserelle = new IntPtr((long)_methodePasserelle.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodePasserelle.MethodHandle.GetFunctionPointer() + 1) + 5);
-                    _nouveauPtrX64 = (long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint));
+                    if (Debugger.IsAttached)
+                    {
+                        _ptrConstructeur = new IntPtr((long)_constructeur.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructeur.MethodHandle.GetFunctionPointer() + 1) + 5);
+                        ptrPasserelle = new IntPtr((long)_methodePasserelle.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodePasserelle.MethodHandle.GetFunctionPointer() + 1) + 5);
+                        _nouveauPtr = (uint)(int)((long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint)));
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
                 }
+                if (!WinAPI.VirtualProtect(_ptrConstructeur, (IntPtr)5, 0x40, out _))
+                    throw new Exceptions.ErreurRePaginationMemoireException(_ptrConstructeur);
                 _opOriginal = Marshal.ReadByte(_ptrConstructeur);
                 _ptrOriginal = Marshal.ReadInt32(_ptrConstructeur + 1);
             }
@@ -266,11 +281,8 @@ namespace HookManager.Modeles
                 {
                     if (EstConstructeur)
                     {
-                        Marshal.WriteByte(_ptrConstructeur, 0xe9);
-                        if (IntPtr.Size == 4)
-                            Marshal.WriteInt32(_ptrConstructeur + 1, _nouveauPtrX86);
-                        else
-                            Marshal.WriteInt32(_ptrConstructeur + 1, (int)_nouveauPtrX64);
+                        Marshal.WriteByte(_ptrConstructeur, 0xE9);
+                        Marshal.WriteInt32(_ptrConstructeur + 1, (int)_nouveauPtr);
                     }
                     else
                     {

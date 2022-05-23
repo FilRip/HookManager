@@ -13,7 +13,7 @@ namespace HookManager.Exceptions
         /// <summary>
         /// Le nom de la méthode n'est pas correct. Spécifiez le type (et l'espace de nom au besoin)
         /// </summary>
-        public NoTypeInName(string nomMethode) : base()
+        internal NoTypeInName(string nomMethode) : base()
         {
             _nomMethode = nomMethode;
         }

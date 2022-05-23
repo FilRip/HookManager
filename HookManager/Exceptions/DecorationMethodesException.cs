@@ -16,7 +16,7 @@ namespace HookManager.Exceptions
         /// </summary>
         /// <param name="methodeAvant">Nom de la méthode à exécuter avant, si présente</param>
         /// <param name="methodeApres">Nom de la méthode à exécuter après, si présente</param>
-        public DecorationMethodesException(string methodeAvant, string methodeApres) : base()
+        internal DecorationMethodesException(string methodeAvant, string methodeApres) : base()
         {
             _methodeAvant = methodeAvant;
             _methodeApres = methodeApres;

@@ -14,7 +14,7 @@ namespace HookManager.Exceptions
         /// <summary>
         /// Erreur plateformes de compilation différentes entres les assembly de méthodes à substituer
         /// </summary>
-        public AssemblyPlatformeDifferente(ProcessorArchitecture paFrom, ProcessorArchitecture paTo) : base()
+        internal AssemblyPlatformeDifferente(ProcessorArchitecture paFrom, ProcessorArchitecture paTo) : base()
         {
             _paFrom = paFrom;
             _paTo = paTo;

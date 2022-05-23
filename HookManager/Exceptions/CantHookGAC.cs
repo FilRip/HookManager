@@ -9,6 +9,10 @@ namespace HookManager.Exceptions
     [Serializable()]
     public class CantHookGAC : HookManagerException
     {
+        internal CantHookGAC() : base()
+        {
+        }
+
         /// <inheritdoc/>
         public override string Message
         {

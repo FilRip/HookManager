@@ -14,7 +14,7 @@ namespace HookManager.Exceptions
         /// <summary>
         /// Le type de plateforme de compilation n'est pas supporté par cette librairie
         /// </summary>
-        public PlateformeNonSupportee(ProcessorArchitecture plateforme) : base()
+        internal PlateformeNonSupportee(ProcessorArchitecture plateforme) : base()
         {
             _plateforme = plateforme;
         }

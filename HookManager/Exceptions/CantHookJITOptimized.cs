@@ -15,7 +15,7 @@ namespace HookManager.Exceptions
         /// Erreur, impossible de remplacer une méthode d'un assembly compilé avec l'option "JIT Optimized"
         /// </summary>
         /// <param name="nomAssembly">Nom de l'Assembly en cause</param>
-        public CantHookJITOptimized(string nomAssembly) : base()
+        internal CantHookJITOptimized(string nomAssembly) : base()
         {
             _nomAssembly = nomAssembly;
         }
@@ -25,7 +25,7 @@ namespace HookManager.Exceptions
         /// </summary>
         /// <param name="nomAssembly">Nom de l'Assembly en cause</param>
         /// <param name="nomMethode">Nom de la méthode en cause</param>
-        public CantHookJITOptimized(string nomAssembly, string nomMethode) : this(nomAssembly)
+        internal CantHookJITOptimized(string nomAssembly, string nomMethode) : this(nomAssembly)
         {
             _nomMethode = nomMethode;
         }

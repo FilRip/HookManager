@@ -13,7 +13,7 @@ namespace HookManager.Exceptions
         /// <summary>
         /// Erreur, la méthode que vous tentez de remplacer est déjà remplacée, consultez HookPool pour la liste
         /// </summary>
-        public MethodAlreadyHooked(string nomMethode) : base()
+        internal MethodAlreadyHooked(string nomMethode) : base()
         {
             _nomMethode = nomMethode;
         }
