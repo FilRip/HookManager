@@ -8,7 +8,7 @@ namespace HookManager.Exceptions
     [Serializable()]
     public class ErreurRePaginationMemoireException : HookManagerException
     {
-        private IntPtr _pointeurMemoire;
+        private readonly IntPtr _pointeurMemoire;
 
         /// <summary>
         /// Erreur lors de la tentative de repaginer un espace mémoire d'après un pointeur mémoire

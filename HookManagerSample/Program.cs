@@ -90,7 +90,7 @@ namespace HookManagerSample
 
             ConstructorInfo ci = typeof(Teste).GetConstructors()[0];
 
-            Console.WriteLine("Test décoration constructeur");
+            /*Console.WriteLine("Test décoration constructeur");
             MethodInfo miAvant = typeof(TesteHook).GetMethod(nameof(TesteHook.AvantConstructeur), BindingFlags.Static | BindingFlags.Public);
             MethodInfo miApres = typeof(TesteHook).GetMethod(nameof(TesteHook.ApresConstructeur), BindingFlags.Static | BindingFlags.Public);
             ManagedHook mh = HookPool.GetInstance().AjouterDecorationConstructeur(ci, miAvant, miApres);
@@ -107,10 +107,13 @@ namespace HookManagerSample
 
             Console.WriteLine("Désactive remplacement constructeur");
             mh.Desactive();
-            monTest = new();
+            monTest = new();*/
 
-            Console.WriteLine(Environment.NewLine + "Appuyez sur <Entrer> pour quitter...");
-            Console.ReadLine();
+            if (System.Diagnostics.Debugger.IsAttached)
+            {
+                Console.WriteLine(Environment.NewLine + "Appuyez sur <Entrer> pour quitter...");
+                Console.ReadLine();
+            }
         }
     }
 }

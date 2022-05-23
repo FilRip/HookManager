@@ -342,6 +342,13 @@ namespace HookManager
             return hook;
         }
 
+        /// <summary>
+        /// Faire une substitution d'un constructeur vers une autre méthode managée
+        /// </summary>
+        /// <param name="constructeurARemplacer">Constructeur à remplacer</param>
+        /// <param name="methodeTo">Méthode remplacant le constructeur</param>
+        /// <param name="autoActiver">Active ou non tout de suite le remplacement</param>
+        [Obsolete("Ne marche pas sans debugger attaché", true)]
         public ManagedHook AjouterHook(ConstructorInfo constructeurARemplacer, MethodInfo methodeTo, bool autoActiver = true)
         {
             if (constructeurARemplacer == null)
@@ -356,6 +363,16 @@ namespace HookManager
             return hook;
         }
 
+        /// <summary>
+        /// Ajouter une décoration à un constructeur<br/>
+        /// C'est à dire, la possibilité d'exécuter une méthode avant et/ou une méthode après le constructeur mentionné.<br/>
+        /// Bien sur, les méthodes avant et après sont facultatives, mais il en faut au moins 1 des 2, sinon la décoration ne sert à rien
+        /// </summary>
+        /// <param name="constructeurADecorer">Constructeur à décorer</param>
+        /// <param name="methodeAvant">Méthode à exécuter avant (si besoin)</param>
+        /// <param name="methodeApres">Méthode à exécuter après (si besoin)</param>
+        /// <param name="autoActiver">Active ou non tout de suite la décoration</param>
+        [Obsolete("Ne marche pas sans debugger attaché", true)]
         public ManagedHook AjouterDecorationConstructeur(ConstructorInfo constructeurADecorer, MethodInfo methodeAvant, MethodInfo methodeApres, bool autoActiver = true)
         {
             if (constructeurADecorer == null)
