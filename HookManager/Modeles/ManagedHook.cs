@@ -35,6 +35,7 @@ namespace HookManager.Modeles
         private int _ptrOriginal;
         private uint _nouveauPtr;
         private IntPtr _ptrConstructeur;
+        private DynamicMethod _copyParente;
 
         private readonly object _threadSafe = new();
 
@@ -188,38 +189,43 @@ namespace HookManager.Modeles
                 RuntimeHelpers.PrepareMethod(_methodePasserelle.MethodHandle);
 
                 IntPtr ptrPasserelle;
-                if (IntPtr.Size == 4)
+                if (Debugger.IsAttached)
                 {
-                    if (Debugger.IsAttached)
+                    if (IntPtr.Size == 4)
                     {
                         _ptrConstructeur = new IntPtr((int)_constructeur.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructeur.MethodHandle.GetFunctionPointer() + 1) + 5);
                         ptrPasserelle = new IntPtr((int)_methodePasserelle.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodePasserelle.MethodHandle.GetFunctionPointer() + 1) + 5);
-                        _nouveauPtr = (uint)(int)((long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint)));
                     }
                     else
                     {
-                        _ptrConstructeur = _constructeur.MethodHandle.GetFunctionPointer();
-                        ptrPasserelle = _methodePasserelle.MethodHandle.GetFunctionPointer();
-                        _nouveauPtr = (uint)(int)((long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint)));
+                        _ptrConstructeur = new IntPtr((long)_constructeur.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructeur.MethodHandle.GetFunctionPointer() + 1) + 5);
+                        ptrPasserelle = new IntPtr((long)_methodePasserelle.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodePasserelle.MethodHandle.GetFunctionPointer() + 1) + 5);
                     }
                 }
                 else
                 {
-                    if (Debugger.IsAttached)
-                    {
-                        _ptrConstructeur = new IntPtr((long)_constructeur.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructeur.MethodHandle.GetFunctionPointer() + 1) + 5);
-                        ptrPasserelle = new IntPtr((long)_methodePasserelle.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodePasserelle.MethodHandle.GetFunctionPointer() + 1) + 5);
-                        _nouveauPtr = (uint)(int)((long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint)));
-                    }
-                    else
-                    {
-                        _ptrConstructeur = _constructeur.MethodHandle.GetFunctionPointer();
-                        ptrPasserelle = _methodePasserelle.MethodHandle.GetFunctionPointer();
-                        _nouveauPtr = (uint)(int)((long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint)));
-                    }
+                    _ptrConstructeur = _constructeur.MethodHandle.GetFunctionPointer();
+                    ptrPasserelle = _methodePasserelle.MethodHandle.GetFunctionPointer();
                 }
+
+                _copyParente = new DynamicMethod("Constructeur_" + _numHook.ToString(), MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeof(object), _constructeur.GetParameters()?.Select(pi => pi.ParameterType).ToArray(), _constructeur.DeclaringType, false);
+                ILGenerator ilGen = _copyParente.GetILGenerator(_constructeur.GetMethodBody().GetILAsByteArray().Length);
+                if (_constructeur.GetMethodBody().LocalVariables != null && _constructeur.GetMethodBody().LocalVariables.Count > 0)
+                    foreach (LocalVariableInfo lv in _constructeur.GetMethodBody().LocalVariables)
+                        ilGen.DeclareLocal(lv.LocalType, lv.IsPinned);
+                if (_constructeur.GetMethodBody().GetILAsByteArray() != null && _constructeur.GetMethodBody().GetILAsByteArray().Length > 0)
+                {
+                    GCHandle gC1 = GCHandle.Alloc(_copyParente.GetMethodBody().GetILAsByteArray(), GCHandleType.Pinned);
+                    IntPtr ptrDestination = Marshal.UnsafeAddrOfPinnedArrayElement(_copyParente.GetMethodBody().GetILAsByteArray(), 0);
+                    Marshal.Copy(_constructeur.GetMethodBody().GetILAsByteArray(), 0, gC1.AddrOfPinnedObject(), _constructeur.GetMethodBody().GetILAsByteArray().Length);
+                    gC1.Free();
+                }
+
+                _nouveauPtr = (uint)(int)((long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint)));
+
                 if (!WinAPI.VirtualProtect(_ptrConstructeur, (IntPtr)5, 0x40, out _))
                     throw new Exceptions.ErreurRePaginationMemoireException(_ptrConstructeur);
+
                 _opOriginal = Marshal.ReadByte(_ptrConstructeur);
                 _ptrOriginal = Marshal.ReadInt32(_ptrConstructeur + 1);
             }
@@ -232,7 +238,8 @@ namespace HookManager.Modeles
                 RuntimeHelpers.PrepareMethod(_methodeParente.MethodHandle);
             }
 
-            if (autoActiver) Active();
+            if (autoActiver)
+                Active();
         }
 
         private Type TypeDeRetour

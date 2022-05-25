@@ -426,7 +426,7 @@ namespace HookManager
                 throw new CantHookDynamicMethod(methodeFrom.Name);
             if (methodeFrom.DeclaringType.Assembly.IsJITOptimizerEnabled() && Debugger.IsAttached)
                 throw new CantHookJITOptimized(methodeFrom.DeclaringType.Assembly?.GetName()?.Name);
-            if (methodeFrom.DeclaringType.Assembly.IsJITOptimizerEnabled() && methodeFrom is MethodInfo && ((MethodInfo)methodeFrom).ReturnType != typeof(void))
+            if (methodeFrom.DeclaringType.Assembly.IsJITOptimizerEnabled() && methodeFrom is MethodInfo miFrom && miFrom.ReturnType != typeof(void))
                 throw new CantHookJITOptimized(methodeFrom.DeclaringType.Assembly?.GetName()?.Name, methodeFrom.Name);
             if (methodeFrom.DeclaringType.Assembly.IsJITOptimizerEnabled() && methodeFrom.IsConstructor)
                 throw new CantHookJITOptimized(methodeFrom.DeclaringType.Assembly?.GetName()?.Name, methodeFrom.Name);
