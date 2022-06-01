@@ -94,6 +94,7 @@
   <ItemGroup>
     <Compile Include="Attributes\DecorationMethodeAttribute.cs" />
     <Compile Include="Attributes\HookClasseAttribute.cs" />
+    <Compile Include="Attributes\HookConstructeurAttribute.cs" />
     <Compile Include="Attributes\HookInterfaceAttribute.cs" />
     <Compile Include="Attributes\HookManagerAttribute.cs" />
     <Compile Include="Attributes\HookMethodeAttribute.cs" />
@@ -119,12 +120,14 @@
     <Compile Include="Exceptions\TypeOrMethodNotFound.cs" />
     <Compile Include="Exceptions\WrongReturnType.cs" />
     <Compile Include="Helpers\ExtensionsAssembly.cs" />
+    <Compile Include="Helpers\ExtensionsByteArray.cs" />
     <Compile Include="Helpers\ExtensionsMethod.cs" />
     <Compile Include="Helpers\ExtensionsProprietes.cs" />
     <Compile Include="Helpers\ExtensionsString.cs" />
     <Compile Include="Helpers\WinAPI.cs" />
     <Compile Include="HookPool.cs" />
     <Compile Include="Modeles\GACHook.cs" />
+    <Compile Include="Modeles\ILOpCodes.cs" />
     <Compile Include="Modeles\ManagedHook.cs" />
     <Compile Include="Modeles\MethodeRemplacementHook.cs" />
     <Compile Include="Modeles\NativeHook.cs" />

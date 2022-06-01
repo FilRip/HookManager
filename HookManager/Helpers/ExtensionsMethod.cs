@@ -1,7 +1,9 @@
 ﻿using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 
 using HookManager.Exceptions;
@@ -200,6 +202,33 @@ namespace HookManager.Helpers
             }
             else
                 throw new NoTypeInName(nomMethode);
+        }
+
+        internal static DynamicMethod CopierMethode(this MethodBase methodeACopier, string nomMethode = "")
+        {
+            if (string.IsNullOrWhiteSpace(nomMethode))
+                nomMethode = methodeACopier.Name + "_Copy";
+            DynamicMethod methodeCopiee = new(nomMethode, MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeof(object), new Type[] { methodeACopier.DeclaringType }.Concat(methodeACopier.GetParameters()?.Select(pi => pi.ParameterType)).ToArray(), methodeACopier.DeclaringType, false);
+            ILGenerator ilGen = methodeCopiee.GetILGenerator(methodeACopier.GetMethodBody().GetILAsByteArray().Length);
+
+            // On copie déjà les variables locale de la méthode
+            if (methodeACopier.GetMethodBody().LocalVariables != null && methodeACopier.GetMethodBody().LocalVariables.Count > 0)
+                foreach (LocalVariableInfo lv in methodeACopier.GetMethodBody().LocalVariables)
+                    ilGen.DeclareLocal(lv.LocalType, lv.IsPinned);
+
+            // On copie ensuite le corps de la méthode
+            List<ILCommande> listeOpCodes = methodeACopier.LireMethodBody();
+            foreach (ILCommande cmd in listeOpCodes)
+            {
+                cmd.Emit(ilGen);
+            }
+            if (listeOpCodes[listeOpCodes.Count - 1].CodeIL.Value != OpCodes.Ret.Value)
+            {
+                ilGen.Emit(OpCodes.Ldarg_0);
+                ilGen.Emit(OpCodes.Ret);
+            }
+
+            return methodeCopiee;
         }
     }
 }

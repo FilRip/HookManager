@@ -208,18 +208,7 @@ namespace HookManager.Modeles
                     ptrPasserelle = _methodePasserelle.MethodHandle.GetFunctionPointer();
                 }
 
-                _copyParente = new DynamicMethod("Constructeur_" + _numHook.ToString(), MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeof(object), _constructeur.GetParameters()?.Select(pi => pi.ParameterType).ToArray(), _constructeur.DeclaringType, false);
-                ILGenerator ilGen = _copyParente.GetILGenerator(_constructeur.GetMethodBody().GetILAsByteArray().Length);
-                if (_constructeur.GetMethodBody().LocalVariables != null && _constructeur.GetMethodBody().LocalVariables.Count > 0)
-                    foreach (LocalVariableInfo lv in _constructeur.GetMethodBody().LocalVariables)
-                        ilGen.DeclareLocal(lv.LocalType, lv.IsPinned);
-                if (_constructeur.GetMethodBody().GetILAsByteArray() != null && _constructeur.GetMethodBody().GetILAsByteArray().Length > 0)
-                {
-                    GCHandle gC1 = GCHandle.Alloc(_copyParente.GetMethodBody().GetILAsByteArray(), GCHandleType.Pinned);
-                    IntPtr ptrDestination = Marshal.UnsafeAddrOfPinnedArrayElement(_copyParente.GetMethodBody().GetILAsByteArray(), 0);
-                    Marshal.Copy(_constructeur.GetMethodBody().GetILAsByteArray(), 0, gC1.AddrOfPinnedObject(), _constructeur.GetMethodBody().GetILAsByteArray().Length);
-                    gC1.Free();
-                }
+                _copyParente = _constructeur.CopierMethode();
 
                 _nouveauPtr = (uint)(int)((long)ptrPasserelle - ((long)_ptrConstructeur + 1 + sizeof(uint)));
 
@@ -342,26 +331,17 @@ namespace HookManager.Modeles
         /// </summary>
         /// <param name="instance">Instance de l'objet d'origine (null si méthode static)</param>
         /// <param name="args">Arguments de la méthode d'origine</param>
-        /// <remarks>Dans le cas d'un constructeur, l'opération n'est pas multi-thread</remarks>
-        public object AppelMethodeParente(object instance = null, params object[] args)
+        public object AppelMethodeOriginale(object instance = null, params object[] args)
         {
             if (EstConstructeur)
             {
-                lock (_threadSafe)
-                {
-                    try
-                    {
-                        Desactive();
-                        if ((args == null && _constructeur.GetParameters().Length > 0) || (args != null && args.Length < _constructeur.GetParameters().Length))
-                            for (int i = args?.Length ?? 0; i < _constructeur.GetParameters().Length + 1; i++)
-                                args = args.Concat(null).ToArray();
-                        return _constructeur.Invoke(instance, ((args == null || args.Length == 0) ? null : args));
-                    }
-                    finally
-                    {
-                        Active();
-                    }
-                }
+                if ((args == null && _constructeur.GetParameters().Length > 0) || (args != null && args.Length < _constructeur.GetParameters().Length))
+                    for (int i = args?.Length ?? 0; i < _constructeur.GetParameters().Length + 1; i++)
+                        args = args.Concat(null).ToArray();
+                if (args == null || args.Length == 0)
+                    return _copyParente.Invoke(null, new object[] { instance }.ToArray());
+                else
+                    return _copyParente.Invoke(null, new object[] { instance }.Concat(args).ToArray());
             }
             else
             {
@@ -389,6 +369,27 @@ namespace HookManager.Modeles
 
         #region Version MethodBuilder
 
+        private MethodBuilder CreerMethodBuilderParente()
+        {
+            TypeBuilder tb = HookPool.GetInstance().Constructeur(_numHook);
+            ILGenerator ilGen;
+            List<Type> listeTypeParametres = new();
+            // Si ce n'est pas une static, déjà, on peut ajouter en premier paramètre l'instance de l'objet
+            if (!EstStatic)
+                listeTypeParametres.Add(typeof(object));
+            if (ParametresMethode != null && ParametresMethode.Length > 0)
+                foreach (ParameterInfo parameterInfo in ParametresMethode)
+                    listeTypeParametres.Add(parameterInfo.ParameterType);
+
+            MethodBuilder mbParente = tb.DefineMethod(HookPool.NOM_METHODE_PARENTE + _numHook.ToString(), MethodAttributes.Private | MethodAttributes.Static, (TypeDeRetour == typeof(void) ? typeof(void) : typeof(object)), listeTypeParametres.ToArray());
+            ilGen = mbParente.GetILGenerator();
+            ilGen.Emit(OpCodes.Ldstr, "Impossible d'appeler la méthode parente");
+            ilGen.Emit(OpCodes.Newobj, typeof(Exception).GetConstructor(new Type[] { typeof(string) }));
+            ilGen.Emit(OpCodes.Throw);
+            tb.CreateType();
+            return mbParente;
+        }
+
         private void ConstruireMethodeBuilder()
         {
             TypeBuilder tb = HookPool.GetInstance().Constructeur(_numHook);
@@ -407,7 +408,7 @@ namespace HookManager.Modeles
             ilGen.Emit(OpCodes.Ldstr, "Impossible d'appeler la méthode parente");
             ilGen.Emit(OpCodes.Newobj, typeof(Exception).GetConstructor(new Type[] { typeof(string) }));
             ilGen.Emit(OpCodes.Throw);
-
+            
             MethodBuilder mb = tb.DefineMethod(HookPool.NOM_METHODE + _numHook.ToString(), MethodAttributes.Private | MethodAttributes.Static, (TypeDeRetour == typeof(void) ? typeof(void) : typeof(object)), listeTypeParametres.ToArray());
             if (!EstStatic)
             {
@@ -529,7 +530,7 @@ namespace HookManager.Modeles
                 }
                 else
                     ilGen.Emit(OpCodes.Ldnull);
-                ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetMethod(nameof(AppelMethodeParente), BindingFlags.Instance | BindingFlags.Public));
+                ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetMethod(nameof(AppelMethodeOriginale), BindingFlags.Instance | BindingFlags.Public));
                 // Et stock le retour, si la méthode retourne une valeur (et non une méthode type void)
                 if (TypeDeRetour != typeof(void))
                     ilGen.Emit(OpCodes.Stloc_3);
@@ -587,7 +588,7 @@ namespace HookManager.Modeles
                 }
                 else
                     ilGen.Emit(OpCodes.Ldnull);
-                ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetMethod(nameof(AppelMethodeParente), BindingFlags.Instance | BindingFlags.Public));
+                ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetMethod(nameof(AppelMethodeOriginale), BindingFlags.Instance | BindingFlags.Public));
                 ilGen.Emit(OpCodes.Stloc_3);
             }
             else

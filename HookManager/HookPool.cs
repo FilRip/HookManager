@@ -348,7 +348,6 @@ namespace HookManager
         /// <param name="constructeurARemplacer">Constructeur à remplacer</param>
         /// <param name="methodeTo">Méthode remplacant le constructeur</param>
         /// <param name="autoActiver">Active ou non tout de suite le remplacement</param>
-        /// <remarks>L'appel à la méthode parente ne supporte pas le multi-threads</remarks>
         public ManagedHook AjouterHook(ConstructorInfo constructeurARemplacer, MethodInfo methodeTo, bool autoActiver = true)
         {
             if (constructeurARemplacer == null)
@@ -371,7 +370,6 @@ namespace HookManager
         /// <param name="methodeAvant">Méthode à exécuter avant (si besoin)</param>
         /// <param name="methodeApres">Méthode à exécuter après (si besoin)</param>
         /// <param name="autoActiver">Active ou non tout de suite la décoration</param>
-        /// <remarks>Cette opération ne supporte pas le multi-threads</remarks>
         public ManagedHook AjouterDecorationConstructeur(ConstructorInfo constructeurADecorer, MethodInfo methodeAvant, MethodInfo methodeApres, bool autoActiver = true)
         {
             if (constructeurADecorer == null)
@@ -978,6 +976,26 @@ namespace HookManager
                                 {
                                     AjouterHook(pi.GetSetMethod(), attrib.Classe.GetMethod(attrib.SetMethode, _filtres), attrib.AutoActiver);
                                 }
+                            }
+                            catch (Exception)
+                            {
+                                if (throwError)
+                                    throw;
+                            }
+                        }
+
+                        // On parcours les constructeurs de cette classe qui ont l'attribut de remplacement
+                        foreach (ConstructorInfo ci in type.GetConstructors(_filtres).Where((ctor) => ctor.GetCustomAttribute<HookConstructeurAttribute>() != null))
+                        {
+                            try
+                            {
+                                HookConstructeurAttribute attrib = ci.GetCustomAttribute<HookConstructeurAttribute>();
+
+                                MethodInfo md = attrib.Classe.GetMethod(attrib.NomMethode, _filtres);
+                                if (md == null)
+                                    throw new TypeOrMethodNotFound(attrib.Classe.ToString(), attrib.NomMethode);
+
+                                AjouterHook(ci, md, attrib.AutoActiver);
                             }
                             catch (Exception)
                             {
