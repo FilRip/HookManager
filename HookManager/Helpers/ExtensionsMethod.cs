@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
@@ -208,7 +207,26 @@ namespace HookManager.Helpers
         {
             if (string.IsNullOrWhiteSpace(nomMethode))
                 nomMethode = methodeACopier.Name + "_Copy";
-            DynamicMethod methodeCopiee = new(nomMethode, MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeof(object), new Type[] { methodeACopier.DeclaringType }.Concat(methodeACopier.GetParameters()?.Select(pi => pi.ParameterType)).ToArray(), methodeACopier.DeclaringType, false);
+
+            Type typeDeRetour = typeof(void);
+            if (methodeACopier is ConstructorInfo ci)
+                typeDeRetour = ci.DeclaringType;
+            else if (methodeACopier is MethodInfo mi)
+                typeDeRetour = mi.ReturnType;
+
+            int nbParametres = methodeACopier.GetParameters().Length;
+            if (!methodeACopier.IsStatic || methodeACopier is ConstructorInfo)
+                nbParametres += 1;
+            Type[] listeParametres = new Type[nbParametres];
+            if (!methodeACopier.IsStatic || methodeACopier is ConstructorInfo)
+            {
+                listeParametres[0] = typeDeRetour;
+                nbParametres++;
+            }
+            foreach (ParameterInfo pi in methodeACopier.GetParameters())
+                listeParametres[nbParametres++] = pi.ParameterType;
+
+            DynamicMethod methodeCopiee = new(nomMethode, MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeDeRetour, listeParametres, methodeACopier.DeclaringType, false);
             ILGenerator ilGen = methodeCopiee.GetILGenerator(methodeACopier.GetMethodBody().GetILAsByteArray().Length);
 
             // On copie déjà les variables locale de la méthode
@@ -222,7 +240,9 @@ namespace HookManager.Helpers
             {
                 cmd.Emit(ilGen);
             }
-            if (listeOpCodes[listeOpCodes.Count - 1].CodeIL.Value != OpCodes.Ret.Value)
+
+            // On ajoute le "return <value>" si c'est une méthode qui retourne quelque chose (pas une void) et que le return n'est pas présent (dans le cas d'un constructeur, il n'est pas présent)
+            if (typeDeRetour != typeof(void) && listeOpCodes[listeOpCodes.Count - 1].CodeIL.Value != OpCodes.Ret.Value)
             {
                 ilGen.Emit(OpCodes.Ldarg_0);
                 ilGen.Emit(OpCodes.Ret);

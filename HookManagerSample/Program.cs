@@ -96,7 +96,7 @@ namespace HookManagerSample
             ManagedHook mh = HookPool.GetInstance().AjouterDecorationConstructeur(ci, miAvant, miApres);
             monTest = new();
             Console.WriteLine("");
-            //mh.Desactive();
+            mh.Desactive();
 
             Console.WriteLine("Test remplacement constructeur");
             MethodInfo miNewConstructeur = typeof(TesteHook).GetMethod(nameof(TesteHook.RemplaceConstructeur), BindingFlags.Static | BindingFlags.Public);
@@ -108,6 +108,11 @@ namespace HookManagerSample
             Console.WriteLine("Désactive remplacement constructeur");
             mh.Desactive();
             monTest = new();
+            Console.WriteLine("");
+
+            /*Console.WriteLine("Liste des assembly :");
+            foreach (Assembly ass in AppDomain.CurrentDomain.GetAssemblies())
+                Console.WriteLine(ass.GetName()?.Name);*/
 
             if (System.Diagnostics.Debugger.IsAttached)
             {

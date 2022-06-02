@@ -14,6 +14,7 @@ namespace HookManagerSample
         {
             Console.WriteLine($"Constructeur remplacé, {instance}");
             // On peut appeler l'ancien constructeur avec ces 2 lignes :
+            Console.WriteLine("Appel ancien constructeur (pour test) :");
             ManagedHook mh = HookPool.GetInstance().RetourneHook();
             mh.AppelMethodeOriginale(instance);
             return instance;

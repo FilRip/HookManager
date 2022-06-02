@@ -331,6 +331,7 @@ namespace HookManager.Modeles
         /// </summary>
         /// <param name="instance">Instance de l'objet d'origine (null si méthode static)</param>
         /// <param name="args">Arguments de la méthode d'origine</param>
+        /// <remarks>Si c'est un constructeur qui a été substitué, vous ne pouvez pas faire de pas à pas dans le constructeur d'origine (mais il est bel et bien appelé)</remarks>
         public object AppelMethodeOriginale(object instance = null, params object[] args)
         {
             if (EstConstructeur)
