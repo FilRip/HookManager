@@ -516,8 +516,8 @@ namespace HookManager.Modeles
                     ilGen.Emit(OpCodes.Callvirt, typeof(MethodBase).GetMethod(nameof(MethodBase.Invoke), new Type[] { typeof(object), typeof(object[]) }));
                     ilGen.Emit(OpCodes.Pop);
                 }
-                // monHook.AppelMethodeParente(<monThis>, listeParametres.ToArray());  // Note : <monThis> si ce n'est pas une méthode static, sinon null
-                // ou monHook.AppelMethodeParente(<monThis>, object[]null);     // Si la méthode n'a pas de paramètre
+                // monHook.AppelMethodeOriginale(<monThis>, listeParametres.ToArray());  // Note : <monThis> si ce n'est pas une méthode static, sinon null
+                // ou monHook.AppelMethodeOriginale(<monThis>, object[]null);     // Si la méthode n'a pas de paramètre
                 ilGen.Emit(OpCodes.Ldloc_0);
                 if (!EstStatic)
                     ilGen.Emit(OpCodes.Ldarg_0);
@@ -574,8 +574,8 @@ namespace HookManager.Modeles
             ilGen.MarkLabel(label2);
             if (EstConstructeur)
             {
-                // monHook.AppelMethodeParente(<monThis>, listeParametres.ToArray());  // Note : <monThis> si ce n'est pas une méthode static, sinon null
-                // ou monHook.AppelMethodeParente(<monThis>, object[]null);     // Si la méthode n'a pas de paramètre
+                // monHook.AppelMethodeOriginale(<monThis>, listeParametres.ToArray());  // Note : <monThis> si ce n'est pas une méthode static, sinon null
+                // ou monHook.AppelMethodeOriginale(<monThis>, object[]null);     // Si la méthode n'a pas de paramètre
                 ilGen.Emit(OpCodes.Ldloc_0);
                 if (!EstStatic)
                     ilGen.Emit(OpCodes.Ldarg_0);
@@ -680,7 +680,7 @@ namespace HookManager.Modeles
                     corps += $"myHook.{nameof(MethodeAvant)}.Invoke({(EstStatic ? "null" : "monThis")}, param.ToArray());" + Environment.NewLine;
                 if (TypeDeRetour != typeof(void))
                     corps += "object retour = ";
-                corps += $"myHook.AppelMethodeParente({(EstStatic ? "null" : "monThis")}, {(ParametresMethode.Length > 0 ? ", param.ToArray()" : "null")});" + Environment.NewLine;
+                corps += $"myHook.{nameof(AppelMethodeOriginale)}({(EstStatic ? "null" : "monThis")}, {(ParametresMethode.Length > 0 ? ", param.ToArray()" : "null")});" + Environment.NewLine;
                 if (_methodeApres != null)
                 {
                     corps += $"myHook.{nameof(MethodeApres)}.Invoke({(EstStatic ? "null" : "monThis")}, param.ToArray());" + Environment.NewLine;
@@ -701,7 +701,7 @@ namespace HookManager.Modeles
                 corps += "return ";
             if (EstConstructeur)
             {
-                corps += $"myHook.AppelMethodeParente";
+                corps += $"myHook.{nameof(AppelMethodeOriginale)}";
             }
             else
             {
@@ -751,15 +751,14 @@ namespace HookManager.Modeles
                 TreatWarningsAsErrors = false,
                 IncludeDebugInformation = HookPool.GetInstance().ModeDebugInterne,
             };
+            if (Debugger.IsAttached && HookPool.GetInstance().ModeDebugInterne)
+                optionsCompilateur.TempFiles = new TempFileCollection(System.IO.Path.GetTempPath(), true);
+
             optionsCompilateur.ReferencedAssemblies.Add(Assembly.GetExecutingAssembly().Location);
 
             CompilerResults retour = HookPool.GetInstance().Compilateur().CompileAssemblyFromSource(optionsCompilateur, corps);
             if (retour.Errors.Count == 0)
-            {
                 _maClasseDynamique = retour.CompiledAssembly.CreateInstance($"{nameof(HookManager)}.Hooks.{HookPool.NOM_CLASSE}{_numHook}");
-                if ((Debugger.IsAttached) && (HookPool.GetInstance().ModeDebugInterne))
-                    System.IO.File.AppendAllText(retour.TempFiles.BasePath + ".0.cs", corps);
-            }
             else
                 throw new Exception(retour.Errors[0].ErrorText);
         }

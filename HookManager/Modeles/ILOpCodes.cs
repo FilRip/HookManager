@@ -64,7 +64,8 @@ namespace HookManager.Modeles
                 switch (commande.OperandType)
                 {
                     case OperandType.InlineBrTarget:
-                        cmd.Param = listeCodes.ReadInt32(ref offset);
+                        int saut = listeCodes.ReadInt32(ref offset);
+                        cmd.Param = offset + saut;
                         break;
                     case OperandType.InlineField:
                         cmd.Param = methodeACopier.Module.ResolveField(listeCodes.ReadInt32(ref offset));
@@ -90,14 +91,14 @@ namespace HookManager.Modeles
                         cmd.Param = methodeACopier.Module.ResolveString(listeCodes.ReadInt32(ref offset));
                         break;
                     case OperandType.InlineSwitch:
-                        /*int taille = listeCodes.ReadInt32(ref offset);
+                        int taille = listeCodes.ReadInt32(ref offset);
+                        int start = offset + (4 * taille);
                         int[] tableau = new int[taille];
                         for (int i = 0; i < taille; i++)
                         {
-                            tableau[i] = listeCodes.ReadInt32(ref offset);
+                            tableau[i] = listeCodes.ReadInt32(ref offset) + start;
                         }
-                        cmd.Param = tableau;*/
-                        cmd.Param = listeCodes.ReadInt32(ref offset);
+                        cmd.Param = tableau;
                         break;
                     case OperandType.InlineTok:
                         cmd.Param = methodeACopier.Module.ResolveMember(listeCodes.ReadInt32(ref offset));
@@ -109,7 +110,8 @@ namespace HookManager.Modeles
                         cmd.Param = listeCodes.ReadInt16(ref offset);
                         break;
                     case OperandType.ShortInlineBrTarget:
-                        cmd.Param = listeCodes[offset++];
+                        int sautCourt = listeCodes[offset++];
+                        cmd.Param = offset + sautCourt;
                         break;
                     case OperandType.ShortInlineI:
                         cmd.Param = listeCodes[offset++];
@@ -190,6 +192,11 @@ namespace HookManager.Modeles
                     case "constructorinfo":
                         ilGen.Emit(CodeIL, (ConstructorInfo)Param);
                         break;
+                    case "int[]":
+                        // TODO
+                        throw new NotImplementedException($"Commande InlineSwitch non implémentée encore.");
+                    default:
+                        throw new NotImplementedException($"Impossible d'écrire le code IL {CodeIL:G}, type Param={NomTypeParam}");
                 }
             }
             else
