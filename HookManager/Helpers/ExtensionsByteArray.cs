@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HookManager.Helpers
 {
@@ -41,6 +37,32 @@ namespace HookManager.Helpers
             Single retour = BitConverter.ToSingle(listeOctets, offset);
             offset += 4;
             return retour;
+        }
+
+        internal static uint ReadCompressedUInt32(this byte[] listeOctets, ref int offset)
+        {
+            byte premierOctet = listeOctets[offset++];
+            if ((premierOctet & 0x80) == 0)
+                return premierOctet;
+            if ((premierOctet & 0x40) == 0)
+                return ((uint)(premierOctet & ~0x80) << 8) | listeOctets[offset++];
+            return ((uint)(premierOctet & ~0xC0) << 24) | (uint)listeOctets[offset++] << 16 | (uint)listeOctets[offset++] << 8 | listeOctets[offset++];
+        }
+
+        internal static int ReadCompressedInt32(this byte[] listeOctets, ref int offset)
+        {
+            byte premierOctet = listeOctets[offset++];
+            offset = 0;
+            int u = (int)listeOctets.ReadCompressedUInt32(ref offset);
+            int v = u >> 1;
+            if ((u & 1) == 0)
+                return u;
+            return (premierOctet & 0xC0) switch
+            {
+                0 or 0x40 => v - 0x40,
+                0x80 => v - 0x2000,
+                _ => v - 0x10000000,
+            };
         }
     }
 }

@@ -14,6 +14,8 @@ namespace HookManager.Modeles
 
         internal static void ChargeOpCodes()
         {
+            if (_listeOpCodes != null)
+                _listeOpCodes.Clear();
             _listeOpCodes = new();
             foreach (FieldInfo fi in typeof(OpCodes).GetFields(BindingFlags.Static | BindingFlags.Public).Where(fi => fi.FieldType == typeof(OpCode)))
             {
@@ -39,7 +41,7 @@ namespace HookManager.Modeles
             if (cmd == 0xFE)
                 complement = commande[offset++];
             foreach (OpCode code in ListeOpCodes)
-                if (code.Value == cmd)
+                if ((code.Value == cmd && complement == 0) || (complement > 0 && code.Size > 1 && ((code.Value & 0xFF) == cmd)))
                 {
                     retour = code;
                     break;
@@ -85,7 +87,27 @@ namespace HookManager.Modeles
                         cmd.Param = listeCodes.ReadDouble(ref offset);
                         break;
                     case OperandType.InlineSig:
-                        cmd.Param = listeCodes.ReadInt32(ref offset);
+                        int signature = listeCodes.ReadInt32(ref offset);
+                        byte[] donnees = methodeACopier.Module.ResolveSignature(signature);
+                        /*int offsetDonnees = 0;
+                        ILCall monCall = new();
+                        byte call = donnees[offsetDonnees++];
+                        if ((call & 0x20) != 0)
+                        {
+                            monCall.avecThis = true;
+                            monCall.call = (byte)(call & ~0x20);
+                        }
+                        if ((call & 0x40) != 0)
+                        {
+                            monCall.avecThis = true;
+                            monCall.call = (byte)(call & ~0x40);
+                        }
+                        monCall.ConventionAppel = (ECallConvention)monCall.call;
+                        if ((call & 0x10) != 0)
+                            donnees.ReadCompressedUInt32(ref offsetDonnees);
+                        uint nbParam = donnees.ReadCompressedUInt32(ref offsetDonnees);
+                        cmd.Param = monCall;*/
+                        cmd.Param = donnees;
                         break;
                     case OperandType.InlineString:
                         cmd.Param = methodeACopier.Module.ResolveString(listeCodes.ReadInt32(ref offset));
@@ -110,8 +132,7 @@ namespace HookManager.Modeles
                         cmd.Param = listeCodes.ReadInt16(ref offset);
                         break;
                     case OperandType.ShortInlineBrTarget:
-                        int sautCourt = listeCodes[offset++];
-                        cmd.Param = offset + sautCourt;
+                        cmd.Param = listeCodes[offset++];
                         break;
                     case OperandType.ShortInlineI:
                         cmd.Param = listeCodes[offset++];
@@ -130,6 +151,24 @@ namespace HookManager.Modeles
             return retour;
         }
     }
+
+    /*internal enum ECallConvention : byte
+    {
+        Default = 0,
+        C = 1,
+        StdCall = 2,
+        ThisCall = 3,
+        FastCall = 4,
+        VarArg = 5,
+        Generic = 10,
+    }
+
+    internal class ILCall
+    {
+        internal bool avecThis;
+        internal byte call;
+        internal ECallConvention ConventionAppel;
+    }*/
 
     internal class ILCommande
     {

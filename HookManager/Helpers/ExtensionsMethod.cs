@@ -250,5 +250,13 @@ namespace HookManager.Helpers
 
             return methodeCopiee;
         }
+
+        internal static byte[] GetILAsByteArray(this DynamicMethod methode)
+        {
+            FieldInfo fiGen = typeof(DynamicMethod).GetField("m_ilGenerator", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo fiByteArray = typeof(ILGenerator).GetField("m_ILStream", BindingFlags.Instance | BindingFlags.NonPublic);
+            ILGenerator ilgen = (ILGenerator)fiGen.GetValue(methode);
+            return (byte[])fiByteArray.GetValue(ilgen);
+        }
     }
 }
