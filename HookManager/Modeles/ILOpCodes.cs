@@ -71,7 +71,8 @@ namespace HookManager.Modeles
                 switch (commande.OperandType)
                 {
                     case OperandType.InlineBrTarget:
-                        cmd.Param = listeCodes.ReadInt32(ref offset);
+                        cmd.Param = listeCodes.ReadInt32(ref offset) + offset;
+                        listeGoto.Add(int.Parse(cmd.Param.ToString()));
                         break;
                     case OperandType.InlineField:
                         cmd.Param = methodeACopier.Module.ResolveField(listeCodes.ReadInt32(ref offset));
@@ -173,7 +174,7 @@ namespace HookManager.Modeles
                     }
                     instruction.Param = listeLabels.ToArray();
                 }
-                else if (instruction.CodeIL.OperandType == OperandType.ShortInlineBrTarget)
+                else if (instruction.CodeIL.OperandType == OperandType.ShortInlineBrTarget || instruction.CodeIL.OperandType == OperandType.InlineBrTarget)
                 {
                     ILCommande cmdDestination = retour.SingleOrDefault(c => c.offset == int.Parse(instruction.Param.ToString()));
                     if (cmdDestination == null)
