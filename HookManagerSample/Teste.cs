@@ -9,6 +9,15 @@ namespace HookManagerSample
         public Teste()
         {
             Console.WriteLine($"Mon constructeur {this}");
+            switch (_valeur)
+            {
+                case "Instance1":
+                    Console.WriteLine("Instance1");
+                    break;
+                default:
+                    Console.WriteLine("Instance2");
+                    break;
+            }
         }
 
         private string _valeur = "Instance1";

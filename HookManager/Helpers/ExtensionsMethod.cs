@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
@@ -209,9 +210,7 @@ namespace HookManager.Helpers
                 nomMethode = methodeACopier.Name + "_Copy";
 
             Type typeDeRetour = typeof(void);
-            if (methodeACopier is ConstructorInfo ci)
-                typeDeRetour = ci.DeclaringType;
-            else if (methodeACopier is MethodInfo mi)
+            if (methodeACopier is MethodInfo mi)
                 typeDeRetour = mi.ReturnType;
 
             int nbParametres = methodeACopier.GetParameters().Length;
@@ -220,7 +219,10 @@ namespace HookManager.Helpers
             Type[] listeParametres = new Type[nbParametres];
             if (!methodeACopier.IsStatic || methodeACopier is ConstructorInfo)
             {
-                listeParametres[0] = typeDeRetour;
+                if (methodeACopier is ConstructorInfo ci)
+                    listeParametres[0] = ci.DeclaringType;
+                else
+                    listeParametres[0] = typeDeRetour;
                 nbParametres++;
             }
             foreach (ParameterInfo pi in methodeACopier.GetParameters())
@@ -236,16 +238,22 @@ namespace HookManager.Helpers
 
             // On copie ensuite le corps de la méthode
             List<ILCommande> listeOpCodes = methodeACopier.LireMethodBody();
+
+            // On copie enfin les labels, par Reflection car ce n'est pas prévu par le NetFramework
+            List<int> listeLabels = listeOpCodes.Where(cmd => cmd.possedeLabel).Select(cmd => cmd.offset).ToList();
+            if (listeLabels.Count > 0)
+            {
+                int[] nouvelleListe = new int[listeLabels.Count];
+                for (int i = 0; i < nouvelleListe.Length; i++)
+                    nouvelleListe[i] = listeLabels[i];
+                typeof(ILGenerator).GetField("m_labelList", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(ilGen, nouvelleListe);
+                typeof(ILGenerator).GetField("m_labelCount", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(ilGen, listeLabels.Count);
+            }
+
+            // Et on ajoute le corps dans notre méthode Dynamic
             foreach (ILCommande cmd in listeOpCodes)
             {
                 cmd.Emit(ilGen);
-            }
-
-            // On ajoute le "return <value>" si c'est une méthode qui retourne quelque chose (pas une void) et que le return n'est pas présent (dans le cas d'un constructeur, il n'est pas présent)
-            if (typeDeRetour != typeof(void) && listeOpCodes[listeOpCodes.Count - 1].CodeIL.Value != OpCodes.Ret.Value)
-            {
-                ilGen.Emit(OpCodes.Ldarg_0);
-                ilGen.Emit(OpCodes.Ret);
             }
 
             return methodeCopiee;

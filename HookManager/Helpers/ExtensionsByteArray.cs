@@ -4,6 +4,13 @@ namespace HookManager.Helpers
 {
     internal static class ExtensionsByteArray
     {
+        internal static sbyte ReadSByte(this byte[] listeOctets, ref int offset)
+        {
+            sbyte retour = Convert.ToSByte(listeOctets[offset]);
+            offset++;
+            return retour;
+        }
+
         internal static Int32 ReadInt32(this byte[] listeOctets, ref int offset)
         {
             Int32 retour = BitConverter.ToInt32(listeOctets, offset);

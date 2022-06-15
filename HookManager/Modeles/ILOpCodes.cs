@@ -53,21 +53,25 @@ namespace HookManager.Modeles
         {
             byte[] listeCodes = methodeACopier.GetMethodBody().GetILAsByteArray();
             List<ILCommande> retour = new();
+            List<int> listeGoto = new();
             int offset;
             ILCommande cmd;
-            for (offset = 0; offset < listeCodes.Length; offset++)
+            int numLabel = 0;
+            for (offset = 0; offset <= listeCodes.Length; offset++)
             {
                 if (offset > 0)
                     offset--;
-                OpCode commande = RetourneOpCode(listeCodes, ref offset, out byte complement);
                 cmd = new();
+                cmd.offset = offset;
+                OpCode commande = RetourneOpCode(listeCodes, ref offset, out byte complement);
                 cmd.CodeIL = commande;
                 cmd.ComplementCodeIL = complement;
+                if (listeGoto.Contains(offset))
+                    cmd.MarqueDebutLabel(numLabel++);
                 switch (commande.OperandType)
                 {
                     case OperandType.InlineBrTarget:
-                        int saut = listeCodes.ReadInt32(ref offset);
-                        cmd.Param = offset + saut;
+                        cmd.Param = listeCodes.ReadInt32(ref offset);
                         break;
                     case OperandType.InlineField:
                         cmd.Param = methodeACopier.Module.ResolveField(listeCodes.ReadInt32(ref offset));
@@ -114,11 +118,12 @@ namespace HookManager.Modeles
                         break;
                     case OperandType.InlineSwitch:
                         int taille = listeCodes.ReadInt32(ref offset);
-                        int start = offset + (4 * taille);
                         int[] tableau = new int[taille];
                         for (int i = 0; i < taille; i++)
                         {
-                            tableau[i] = listeCodes.ReadInt32(ref offset) + start;
+                            tableau[i] = listeCodes.ReadInt32(ref offset);
+                            if (!listeGoto.Contains(tableau[i]))
+                                listeGoto.Add(tableau[i]);
                         }
                         cmd.Param = tableau;
                         break;
@@ -132,7 +137,8 @@ namespace HookManager.Modeles
                         cmd.Param = listeCodes.ReadInt16(ref offset);
                         break;
                     case OperandType.ShortInlineBrTarget:
-                        cmd.Param = listeCodes[offset++];
+                        cmd.Param = listeCodes[offset++] + offset;
+                        listeGoto.Add(int.Parse(cmd.Param.ToString()));
                         break;
                     case OperandType.ShortInlineI:
                         cmd.Param = listeCodes[offset++];
@@ -147,6 +153,35 @@ namespace HookManager.Modeles
                         throw new NotImplementedException($"OperandType inconnu ({commande.OperandType:G})");
                 }
                 retour.Add(cmd);
+            }
+
+            foreach (ILCommande instruction in retour)
+            {
+                if (instruction.Param is int[] tableau)
+                {
+                    List<Label> listeLabels = new();
+                    for (int i = 0; i < tableau.Length; i++)
+                    {
+                        cmd = retour.SingleOrDefault(c => c.offset == tableau[i]);
+                        if (cmd == null)
+                            throw new Exception("Un label n'a pas été trouvé");
+                        else
+                            listeLabels.Add(cmd.marqueLabel);
+                    }
+                    instruction.Param = listeLabels.ToArray();
+                }
+                else if (instruction.CodeIL.OperandType == OperandType.ShortInlineBrTarget)
+                {
+                    ILCommande cmdDestination = retour.SingleOrDefault(c => c.offset == int.Parse(instruction.Param.ToString()));
+                    if (cmdDestination == null)
+                        throw new Exception("Un label n'a pas été trouvé");
+                    else
+                    {
+                        if (!cmdDestination.possedeLabel)
+                            cmdDestination.MarqueDebutLabel(numLabel++);
+                        instruction.Param = cmdDestination.marqueLabel;
+                    }
+                }
             }
             return retour;
         }
@@ -172,70 +207,69 @@ namespace HookManager.Modeles
 
     internal class ILCommande
     {
+        internal int offset;
         internal OpCode CodeIL;
         internal byte ComplementCodeIL;
         internal object Param;
+        internal Label marqueLabel;
+        internal bool possedeLabel;
 
-        internal string NomTypeParam
+        internal void MarqueDebutLabel(int numLabel)
         {
-            get
-            {
-                if (Param != null)
-                {
-                    if (Param is FieldInfo)
-                        return "fieldinfo";
-                    if (Param is ConstructorInfo)
-                        return "constructorinfo";
-                    if (Param is MethodInfo)
-                        return "methodinfo";
-                    return Param.GetType().Name.ToLower();
-                }
-                else
-                    return null;
-            }
+            marqueLabel = (Label)typeof(Label).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0].Invoke(new object[] { numLabel });
+            possedeLabel = true;
         }
 
         public void Emit(ILGenerator ilGen)
         {
             if (Param != null)
             {
-                switch (NomTypeParam)
+                switch (Param)
                 {
-                    case "byte":
-                        ilGen.Emit(CodeIL, (byte)Param);
+                    case byte b:
+                        ilGen.Emit(CodeIL, b);
                         break;
-                    case "single":
-                        ilGen.Emit(CodeIL, (Single)Param);
+                    case sbyte sb:
+                        ilGen.Emit(CodeIL, sb);
                         break;
-                    case "string":
-                        ilGen.Emit(CodeIL, (string)Param);
+                    case Single s:
+                        ilGen.Emit(CodeIL, s);
                         break;
-                    case "int16":
-                        ilGen.Emit(CodeIL, (Int16)Param);
+                    case string s:
+                        ilGen.Emit(CodeIL, s);
                         break;
-                    case "int32":
-                        ilGen.Emit(CodeIL, (Int32)Param);
+                    case Int16 entierCourt:
+                        ilGen.Emit(CodeIL, entierCourt);
                         break;
-                    case "int64":
-                        ilGen.Emit(CodeIL, (Int64)Param);
+                    case Int32 entier:
+                        ilGen.Emit(CodeIL, entier);
                         break;
-                    case "double":
-                        ilGen.Emit(CodeIL, (double)Param);
+                    case Int64 entierLong:
+                        ilGen.Emit(CodeIL, entierLong);
                         break;
-                    case "fieldinfo":
-                        ilGen.Emit(CodeIL, (FieldInfo)Param);
+                    case double d:
+                        ilGen.Emit(CodeIL, d);
                         break;
-                    case "methodinfo":
-                        ilGen.Emit(CodeIL, (MethodInfo)Param);
+                    case FieldInfo fi:
+                        ilGen.Emit(CodeIL, fi);
                         break;
-                    case "constructorinfo":
-                        ilGen.Emit(CodeIL, (ConstructorInfo)Param);
+                    case MethodInfo mi:
+                        ilGen.Emit(CodeIL, mi);
                         break;
-                    case "int[]":
-                        // TODO
-                        throw new NotImplementedException($"Commande InlineSwitch non implémentée encore.");
+                    case ConstructorInfo ci:
+                        ilGen.Emit(CodeIL, ci);
+                        break;
+                    case Type t:
+                        ilGen.Emit(CodeIL, t);
+                        break;
+                    case Label[] listeLabels:
+                        ilGen.Emit(CodeIL, listeLabels);
+                        break;
+                    case Label l:
+                        ilGen.Emit(CodeIL, l);
+                        break;
                     default:
-                        throw new NotImplementedException($"Impossible d'écrire le code IL {CodeIL:G}, type Param={NomTypeParam}");
+                        throw new NotImplementedException($"Impossible d'écrire le code IL {CodeIL:G}, type Param={Param.GetType()}, Valeur Param={Param}");
                 }
             }
             else
