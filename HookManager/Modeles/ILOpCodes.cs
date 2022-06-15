@@ -92,8 +92,8 @@ namespace HookManager.Modeles
                         break;
                     case OperandType.InlineSig:
                         int signature = listeCodes.ReadInt32(ref offset);
-                        byte[] donnees = methodeACopier.Module.ResolveSignature(signature);
-                        /*int offsetDonnees = 0;
+                        /*byte[] donnees = methodeACopier.Module.ResolveSignature(signature);
+                        int offsetDonnees = 0;
                         ILCall monCall = new();
                         byte call = donnees[offsetDonnees++];
                         if ((call & 0x20) != 0)
@@ -111,7 +111,7 @@ namespace HookManager.Modeles
                             donnees.ReadCompressedUInt32(ref offsetDonnees);
                         uint nbParam = donnees.ReadCompressedUInt32(ref offsetDonnees);
                         cmd.Param = monCall;*/
-                        cmd.Param = donnees;
+                        cmd.Param = signature;
                         break;
                     case OperandType.InlineString:
                         cmd.Param = methodeACopier.Module.ResolveString(listeCodes.ReadInt32(ref offset));
@@ -137,11 +137,14 @@ namespace HookManager.Modeles
                         cmd.Param = listeCodes.ReadInt16(ref offset);
                         break;
                     case OperandType.ShortInlineBrTarget:
-                        cmd.Param = listeCodes[offset++] + offset;
+                        cmd.Param = listeCodes.ReadSByte(ref offset) + offset;
                         listeGoto.Add(int.Parse(cmd.Param.ToString()));
                         break;
                     case OperandType.ShortInlineI:
-                        cmd.Param = listeCodes[offset++];
+                        if (commande == OpCodes.Ldc_I4_S)
+                            cmd.Param = listeCodes.ReadSByte(ref offset);
+                        else
+                            cmd.Param = listeCodes[offset++];
                         break;
                     case OperandType.ShortInlineR:
                         cmd.Param = listeCodes.ReadSingle(ref offset);

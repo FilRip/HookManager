@@ -18,6 +18,12 @@ namespace HookManagerSample
                     Console.WriteLine("Instance2");
                     break;
             }
+            AppelDepuisConstructeur();
+        }
+
+        private void AppelDepuisConstructeur()
+        {
+            Console.WriteLine("Appel méthode depuis constructeur");
         }
 
         private string _valeur = "Instance1";

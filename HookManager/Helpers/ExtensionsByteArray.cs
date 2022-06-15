@@ -46,6 +46,27 @@ namespace HookManager.Helpers
             return retour;
         }
 
+        internal static uint ReadUInt32(this byte[] listeOctets, ref int offset)
+        {
+            uint retour = BitConverter.ToUInt32(listeOctets, offset);
+            offset += 4;
+            return retour;
+        }
+
+        internal static UInt16 ReadUInt16(this byte[] listeOctets, ref int offset)
+        {
+            UInt16 retour = BitConverter.ToUInt16(listeOctets, offset);
+            offset += 2;
+            return retour;
+        }
+
+        internal static UInt64 ReadUInt64(this byte[] listeOctets, ref int offset)
+        {
+            UInt64 retour = BitConverter.ToUInt64(listeOctets, offset);
+            offset += 8;
+            return retour;
+        }
+
         internal static uint ReadCompressedUInt32(this byte[] listeOctets, ref int offset)
         {
             byte premierOctet = listeOctets[offset++];
