@@ -95,5 +95,13 @@ namespace HookManagerSample
         {
             Console.WriteLine("Corps de la méthode");
         }
+
+        public delegate void DelegateMonEvent(object sender, EventArgs e);
+        public event DelegateMonEvent MonEvent;
+
+        public void DeclencheEvent()
+        {
+            MonEvent?.Invoke(this, new EventArgs());
+        }
     }
 }

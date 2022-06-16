@@ -166,10 +166,10 @@ namespace HookManager.Modeles
         /// <summary>
         /// Appel la méthode originale du GAC
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="instance"></param>
-        /// <param name="args"></param>
-        /// <returns></returns>
+        /// <typeparam name="T">Type retourné par la méthode, si ce n'est pas une void</typeparam>
+        /// <param name="instance">Instance de l'objet sur lequel appeler la méthode d'origine (null si méthode static)</param>
+        /// <param name="args">Paramètres de la méthode d'origine, si elle en a</param>
+        /// <remarks>Appeler la méthode "parente" du GAC ne supporte PAS le multithread</remarks>
         public T Call<T>(object instance, params object[] args) where T : class
         {
             lock (_threadSafe)

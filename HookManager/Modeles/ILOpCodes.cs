@@ -49,6 +49,99 @@ namespace HookManager.Modeles
             return retour;
         }
 
+        internal static ILCommande LireInstruction(this byte[] listeOctets, ref int offset, MethodBase methodeDOrigine)
+        {
+            ILCommande cmd;
+            cmd = new();
+            cmd.offset = offset;
+            OpCode commande = RetourneOpCode(listeOctets, ref offset, out byte complement);
+            cmd.CodeIL = commande;
+            cmd.ComplementCodeIL = complement;
+            switch (commande.OperandType)
+            {
+                case OperandType.InlineBrTarget:
+                    cmd.Param = listeOctets.ReadInt32(ref offset);
+                    break;
+                case OperandType.InlineField:
+                    cmd.Param = methodeDOrigine.Module.ResolveField(listeOctets.ReadInt32(ref offset));
+                    break;
+                case OperandType.InlineI:
+                    cmd.Param = listeOctets.ReadInt32(ref offset);
+                    break;
+                case OperandType.InlineI8:
+                    cmd.Param = listeOctets.ReadInt64(ref offset);
+                    break;
+                case OperandType.InlineMethod:
+                    cmd.Param = methodeDOrigine.Module.ResolveMethod(listeOctets.ReadInt32(ref offset));
+                    break;
+                case OperandType.InlineNone:
+                    break;
+                case OperandType.InlineR:
+                    cmd.Param = listeOctets.ReadDouble(ref offset);
+                    break;
+                case OperandType.InlineSig:
+                    int signature = listeOctets.ReadInt32(ref offset);
+                    /*byte[] donnees = methodeACopier.Module.ResolveSignature(signature);
+                    int offsetDonnees = 0;
+                    ILCall monCall = new();
+                    byte call = donnees[offsetDonnees++];
+                    if ((call & 0x20) != 0)
+                    {
+                        monCall.avecThis = true;
+                        monCall.call = (byte)(call & ~0x20);
+                    }
+                    if ((call & 0x40) != 0)
+                    {
+                        monCall.avecThis = true;
+                        monCall.call = (byte)(call & ~0x40);
+                    }
+                    monCall.ConventionAppel = (ECallConvention)monCall.call;
+                    if ((call & 0x10) != 0)
+                        donnees.ReadCompressedUInt32(ref offsetDonnees);
+                    uint nbParam = donnees.ReadCompressedUInt32(ref offsetDonnees);
+                    cmd.Param = monCall;*/
+                    cmd.Param = signature;
+                    break;
+                case OperandType.InlineString:
+                    cmd.Param = methodeDOrigine.Module.ResolveString(listeOctets.ReadInt32(ref offset));
+                    break;
+                case OperandType.InlineSwitch:
+                    int taille = listeOctets.ReadInt32(ref offset);
+                    int[] tableau = new int[taille];
+                    for (int i = 0; i < taille; i++)
+                        tableau[i] = listeOctets.ReadInt32(ref offset);
+                    cmd.Param = tableau;
+                    break;
+                case OperandType.InlineTok:
+                    cmd.Param = methodeDOrigine.Module.ResolveMember(listeOctets.ReadInt32(ref offset));
+                    break;
+                case OperandType.InlineType:
+                    cmd.Param = methodeDOrigine.Module.ResolveType(listeOctets.ReadInt32(ref offset));
+                    break;
+                case OperandType.InlineVar:
+                    cmd.Param = listeOctets.ReadInt16(ref offset);
+                    break;
+                case OperandType.ShortInlineBrTarget:
+                    cmd.Param = listeOctets.ReadSByte(ref offset);
+                    break;
+                case OperandType.ShortInlineI:
+                    if (commande == OpCodes.Ldc_I4_S)
+                        cmd.Param = listeOctets.ReadSByte(ref offset);
+                    else
+                        cmd.Param = listeOctets[offset++];
+                    break;
+                case OperandType.ShortInlineR:
+                    cmd.Param = listeOctets.ReadSingle(ref offset);
+                    break;
+                case OperandType.ShortInlineVar:
+                    cmd.Param = listeOctets[offset++];
+                    break;
+                default:
+                    throw new NotImplementedException($"OperandType inconnu ({commande.OperandType:G})");
+            }
+            return cmd;
+        }
+
         internal static List<ILCommande> LireMethodBody(this MethodBase methodeACopier)
         {
             byte[] listeCodes = methodeACopier.GetMethodBody().GetILAsByteArray();

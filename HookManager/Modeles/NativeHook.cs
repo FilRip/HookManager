@@ -160,8 +160,8 @@ namespace HookManager.Modeles
         /// </summary>
         /// <typeparam name="T">Delegué représentant la signature de la méthode native</typeparam>
         /// <typeparam name="V">Le type de retour</typeparam>
-        /// <param name="args">Arguments à passer à la méthode native</param>
-        /// <remarks>Appeler la méthode "parente" ne supporte PAS le multithread</remarks>
+        /// <param name="args">Paramètres pour la méthode native d'origine, si elle en a</param>
+        /// <remarks>Appeler la méthode "parente" native ne supporte PAS le multithread</remarks>
         public V Call<T, V>(params object[] args)
             where T : class
             where V : class

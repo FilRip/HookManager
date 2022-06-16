@@ -25,12 +25,12 @@ namespace HookManager
         private Dictionary<uint, MethodeRemplacementHook> _listeRemplacement;
         private Dictionary<uint, ManagedHook> _listeDecoration;
 
-        private readonly object _lockNumHook = new();
+        private readonly object _lockNumHook;
 
         private uint _nbHook;
         private static HookPool _instance;
         private BindingFlags _filtres;
-        private bool _modeDebugInterne = false;
+        private bool _modeDebugInterne;
 
         private CSharpCodeProvider _compilateur;
 
@@ -40,6 +40,8 @@ namespace HookManager
 
         internal HookPool()
         {
+            _lockNumHook = new();
+            _modeDebugInterne = false;
         }
 
         /// <summary>
@@ -340,6 +342,47 @@ namespace HookManager
             if (hook != null)
                 _listeHook.Add(numHook, hook);
             return hook;
+        }
+
+        /// <summary>
+        /// Intercepte lorsqu'un nouvel abonné arrive sur un Event, ou qu'on supprime un abonné
+        /// </summary>
+        /// <param name="evenement">Evenement à surveiller</param>
+        /// <param name="ajoutAbonne">Méthode exécutée lors de l'ajout d'un nouvel abonné à l'évènement</param>
+        /// <param name="supprimeAbonne">Méthode exécutée lors de la suppression d'un abonné à l'évènement</param>
+        /// <param name="autoActiver">Active ou non tout de suite l'interception</param>
+        public ManagedHook[] AjouterHook(EventInfo evenement, MethodInfo ajoutAbonne = null, MethodInfo supprimeAbonne = null, bool autoActiver = true)
+        {
+            if (ajoutAbonne == null && supprimeAbonne == null)
+                throw new AucuneMethodePourEvenement();
+
+            ManagedHook hookAjout, hookSupprime;
+            List<ManagedHook> listeRetour = new();
+            if (ajoutAbonne != null)
+            {
+                VerificationCommunes(evenement.AddMethod, ajoutAbonne);
+                VerifierCorrespondances(evenement.AddMethod, ajoutAbonne);
+                uint numHook = IncrNumHook();
+                hookAjout = new(numHook, evenement.AddMethod, ajoutAbonne, autoActiver);
+                if (hookAjout != null)
+                {
+                    _listeHook.Add(numHook, hookAjout);
+                    listeRetour.Add(hookAjout);
+                }
+            }
+            if (supprimeAbonne != null)
+            {
+                VerificationCommunes(evenement.RemoveMethod, supprimeAbonne);
+                VerifierCorrespondances(evenement.RemoveMethod, supprimeAbonne);
+                uint numHook = IncrNumHook();
+                hookSupprime = new(numHook, evenement.RemoveMethod, ajoutAbonne, autoActiver);
+                if (hookSupprime != null)
+                {
+                    _listeHook.Add(numHook, hookSupprime);
+                    listeRetour.Add(hookSupprime);
+                }
+            }
+            return listeRetour.ToArray();
         }
 
         /// <summary>
@@ -996,6 +1039,35 @@ namespace HookManager
                                     throw new TypeOrMethodNotFound(attrib.Classe.ToString(), attrib.NomMethode);
 
                                 AjouterHook(ci, md, attrib.AutoActiver);
+                            }
+                            catch (Exception)
+                            {
+                                if (throwError)
+                                    throw;
+                            }
+                        }
+
+                        // On parcours les évènements de cette classe qui ont l'attribut d'interception
+                        foreach (EventInfo ei in type.GetEvents(_filtres).Where(evenement => evenement.GetCustomAttribute<HookEvenementAttribute>() != null))
+                        {
+                            try
+                            {
+                                HookEvenementAttribute attrib = ei.GetCustomAttribute<HookEvenementAttribute>();
+
+                                MethodInfo ma = null, ms = null;
+                                if (!string.IsNullOrWhiteSpace(attrib.NomMethodeAjout))
+                                {
+                                    ma = attrib.Classe.GetMethod(attrib.NomMethodeAjout, _filtres);
+                                    if (ma == null)
+                                        throw new TypeOrMethodNotFound(attrib.Classe.ToString(), attrib.NomMethodeAjout);
+                                }
+                                if (!string.IsNullOrWhiteSpace(attrib.NomMethodeSupprime))
+                                {
+                                    ma = attrib.Classe.GetMethod(attrib.NomMethodeSupprime, _filtres);
+                                    if (ma == null)
+                                        throw new TypeOrMethodNotFound(attrib.Classe.ToString(), attrib.NomMethodeSupprime);
+                                }
+                                AjouterHook(ei, ma, ms, attrib.AutoActiver);
                             }
                             catch (Exception)
                             {

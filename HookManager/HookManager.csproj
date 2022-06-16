@@ -95,12 +95,14 @@
     <Compile Include="Attributes\DecorationMethodeAttribute.cs" />
     <Compile Include="Attributes\HookClasseAttribute.cs" />
     <Compile Include="Attributes\HookConstructeurAttribute.cs" />
+    <Compile Include="Attributes\HookEvenementAttribute.cs" />
     <Compile Include="Attributes\HookInterfaceAttribute.cs" />
     <Compile Include="Attributes\HookManagerAttribute.cs" />
     <Compile Include="Attributes\HookMethodeAttribute.cs" />
     <Compile Include="Attributes\HookProprieteAttribute.cs" />
     <Compile Include="Attributes\MethodeRemplacementAttribute.cs" />
     <Compile Include="Exceptions\AssemblyPlatformeDifferente.cs" />
+    <Compile Include="Exceptions\AucuneMethodePourEvenement.cs" />
     <Compile Include="Exceptions\CantHookDynamicMethod.cs" />
     <Compile Include="Exceptions\CantHookGAC.cs" />
     <Compile Include="Exceptions\CantHookJITOptimized.cs" />

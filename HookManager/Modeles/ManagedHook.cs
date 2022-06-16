@@ -330,7 +330,7 @@ namespace HookManager.Modeles
         /// Appel la méthode/le constructeur d'origine
         /// </summary>
         /// <param name="instance">Instance de l'objet d'origine (null si méthode static)</param>
-        /// <param name="args">Arguments de la méthode d'origine</param>
+        /// <param name="args">Paramètres pour la méthode d'origine, si elle en a</param>
         /// <remarks>Si c'est un constructeur qui a été substitué, vous ne pouvez pas faire de pas à pas dans le constructeur d'origine (mais il est bel et bien appelé)</remarks>
         public object AppelMethodeOriginale(object instance = null, params object[] args)
         {
@@ -647,7 +647,7 @@ namespace HookManager.Modeles
                 for (int i = 0; i < ParametresMethode.Length; i++)
                 {
                     if ((!EstStatic) || (i > 0)) corps += ", ";
-                    corps += ParametresMethode[i].ParameterType.ToString() + $" param{(i + 1)} = null";
+                    corps += ParametresMethode[i].ParameterType.ToString().Replace("+", ".") + $" param{(i + 1)} = null";
                 }
             corps += ")" + Environment.NewLine;
             corps += "{" + Environment.NewLine;
@@ -731,7 +731,7 @@ namespace HookManager.Modeles
                 for (j = 0; j < ParametresMethode.Length; j++)
                 {
                     if ((j > 0) || (!EstStatic)) corps += ", ";
-                    corps += ParametresMethode[j].ParameterType.ToString() + $" param{(j + 1)} = null";
+                    corps += ParametresMethode[j].ParameterType.ToString().Replace("+",".") + $" param{(j + 1)} = null";
                 }
             if ((_estMethodeDecoration) && (TypeDeRetour != typeof(void)) && !EstConstructeur)
                 corps += $", object param{j + 1} = null";
@@ -756,6 +756,7 @@ namespace HookManager.Modeles
                 optionsCompilateur.TempFiles = new TempFileCollection(System.IO.Path.GetTempPath(), true);
 
             optionsCompilateur.ReferencedAssemblies.Add(Assembly.GetExecutingAssembly().Location);
+            optionsCompilateur.ReferencedAssemblies.Add(Assembly.GetEntryAssembly().Location);
 
             CompilerResults retour = HookPool.GetInstance().Compilateur().CompileAssemblyFromSource(optionsCompilateur, corps);
             if (retour.Errors.Count == 0)

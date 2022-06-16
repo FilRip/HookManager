@@ -95,6 +95,20 @@ namespace HookManagerSample
         {
             Console.WriteLine("Apres corps");
         }
+
+        public static void IntercepteAjoutEvent(object instance, Delegate leDelegue)
+        {
+            Console.WriteLine("Détecte ajout d'un abonné à l'event : " + leDelegue.ToString().Replace("+","."));
+            ManagedHook mh = HookPool.GetInstance().RetourneHook();
+            mh.AppelMethodeOriginale(instance, new object[] { leDelegue });
+        }
+
+        public static void IntercepteSupprimeEvent(object instance, Delegate leDelegue)
+        {
+            Console.WriteLine("Détecte suppression d'un abonné à l'event : " + leDelegue.ToString().Replace("+", "."));
+            ManagedHook mh = HookPool.GetInstance().RetourneHook();
+            mh.AppelMethodeOriginale(instance, new object[] { leDelegue });
+        }
     }
 #pragma warning restore IDE0060, IDE0079
 }

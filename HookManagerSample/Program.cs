@@ -110,6 +110,14 @@ namespace HookManagerSample
             monTest = new();
             Console.WriteLine("");
 
+            Console.WriteLine("Test Events");
+            HookPool.GetInstance().AjouterHook(typeof(Teste).GetEvent(nameof(Teste.MonEvent)), typeof(TesteHook).GetMethod(nameof(TesteHook.IntercepteAjoutEvent), BindingFlags.Static | BindingFlags.Public), typeof(TesteHook).GetMethod(nameof(TesteHook.IntercepteSupprimeEvent), BindingFlags.Static | BindingFlags.Public));
+            monTest.MonEvent += MonTest_MonEvent;
+            monTest.DeclencheEvent();
+            monTest.MonEvent -= MonTest_MonEvent;
+            monTest.DeclencheEvent();
+            Console.WriteLine("");
+
             /*Console.WriteLine("Liste des assembly :");
             foreach (Assembly ass in AppDomain.CurrentDomain.GetAssemblies())
                 Console.WriteLine(ass.GetName()?.Name);*/
@@ -119,6 +127,11 @@ namespace HookManagerSample
                 Console.WriteLine(Environment.NewLine + "Appuyez sur <Entrer> pour quitter...");
                 Console.ReadLine();
             }
+        }
+
+        private static void MonTest_MonEvent(object sender, EventArgs e)
+        {
+            Console.WriteLine("Execution MonEvent");
         }
     }
 }
