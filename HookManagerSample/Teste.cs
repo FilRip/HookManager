@@ -8,17 +8,28 @@ namespace HookManagerSample
     {
         public Teste()
         {
-            Console.WriteLine($"Mon constructeur {this}");
-            switch (_valeur)
+            try
             {
-                case "Instance1":
-                    Console.WriteLine("Instance1");
-                    break;
-                default:
-                    Console.WriteLine("Instance2");
-                    break;
+                Console.WriteLine($"Mon constructeur {this}");
+                switch (_valeur)
+                {
+                    case "Instance1":
+                        Console.WriteLine("Instance1");
+                        break;
+                    default:
+                        Console.WriteLine("Instance2");
+                        break;
+                }
+                throw new Exception("Fausse erreur");
             }
-            AppelDepuisConstructeur();
+            catch (Exception)
+            {
+                Console.WriteLine("--- Exception catchée");
+            }
+            finally
+            {
+                AppelDepuisConstructeur();
+            }
         }
 
         private void AppelDepuisConstructeur()

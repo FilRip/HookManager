@@ -123,6 +123,7 @@
     <Compile Include="Exceptions\WrongReturnType.cs" />
     <Compile Include="Helpers\ExtensionsAssembly.cs" />
     <Compile Include="Helpers\ExtensionsByteArray.cs" />
+    <Compile Include="Helpers\ExtensionsILCommande.cs" />
     <Compile Include="Helpers\ExtensionsMethod.cs" />
     <Compile Include="Helpers\ExtensionsProprietes.cs" />
     <Compile Include="Helpers\ExtensionsString.cs" />

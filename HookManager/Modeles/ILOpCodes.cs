@@ -49,7 +49,7 @@ namespace HookManager.Modeles
             return retour;
         }
 
-        internal static ILCommande LireInstruction(this byte[] listeOctets, ref int offset, MethodBase methodeDOrigine)
+        internal static ILCommande LireInstruction(this byte[] listeOctets, ref int offset, MethodBase methodeDOrigine = null)
         {
             ILCommande cmd;
             cmd = new();
@@ -63,7 +63,8 @@ namespace HookManager.Modeles
                     cmd.Param = listeOctets.ReadInt32(ref offset);
                     break;
                 case OperandType.InlineField:
-                    cmd.Param = methodeDOrigine.Module.ResolveField(listeOctets.ReadInt32(ref offset));
+                    if (methodeDOrigine != null)
+                        cmd.Param = methodeDOrigine.Module.ResolveField(listeOctets.ReadInt32(ref offset));
                     break;
                 case OperandType.InlineI:
                     cmd.Param = listeOctets.ReadInt32(ref offset);
@@ -72,7 +73,8 @@ namespace HookManager.Modeles
                     cmd.Param = listeOctets.ReadInt64(ref offset);
                     break;
                 case OperandType.InlineMethod:
-                    cmd.Param = methodeDOrigine.Module.ResolveMethod(listeOctets.ReadInt32(ref offset));
+                    if (methodeDOrigine != null)
+                        cmd.Param = methodeDOrigine.Module.ResolveMethod(listeOctets.ReadInt32(ref offset));
                     break;
                 case OperandType.InlineNone:
                     break;
@@ -103,7 +105,8 @@ namespace HookManager.Modeles
                     cmd.Param = signature;
                     break;
                 case OperandType.InlineString:
-                    cmd.Param = methodeDOrigine.Module.ResolveString(listeOctets.ReadInt32(ref offset));
+                    if (methodeDOrigine != null)
+                        cmd.Param = methodeDOrigine.Module.ResolveString(listeOctets.ReadInt32(ref offset));
                     break;
                 case OperandType.InlineSwitch:
                     int taille = listeOctets.ReadInt32(ref offset);
@@ -113,10 +116,12 @@ namespace HookManager.Modeles
                     cmd.Param = tableau;
                     break;
                 case OperandType.InlineTok:
-                    cmd.Param = methodeDOrigine.Module.ResolveMember(listeOctets.ReadInt32(ref offset));
+                    if (methodeDOrigine != null)
+                        cmd.Param = methodeDOrigine.Module.ResolveMember(listeOctets.ReadInt32(ref offset));
                     break;
                 case OperandType.InlineType:
-                    cmd.Param = methodeDOrigine.Module.ResolveType(listeOctets.ReadInt32(ref offset));
+                    if (methodeDOrigine != null)
+                        cmd.Param = methodeDOrigine.Module.ResolveType(listeOctets.ReadInt32(ref offset));
                     break;
                 case OperandType.InlineVar:
                     cmd.Param = listeOctets.ReadInt16(ref offset);
@@ -252,6 +257,7 @@ namespace HookManager.Modeles
                 retour.Add(cmd);
             }
 
+            // 2nd passe pour les "goto"
             foreach (ILCommande instruction in retour)
             {
                 if (instruction.Param is int[] tableau)
@@ -259,7 +265,7 @@ namespace HookManager.Modeles
                     List<Label> listeLabels = new();
                     for (int i = 0; i < tableau.Length; i++)
                     {
-                        cmd = retour.SingleOrDefault(c => c.offset == tableau[i]);
+                        cmd = retour.RetourneCommande(tableau[i]);
                         if (cmd == null)
                             throw new Exception("Un label n'a pas été trouvé");
                         else
@@ -269,7 +275,7 @@ namespace HookManager.Modeles
                 }
                 else if (instruction.CodeIL.OperandType == OperandType.ShortInlineBrTarget || instruction.CodeIL.OperandType == OperandType.InlineBrTarget)
                 {
-                    ILCommande cmdDestination = retour.SingleOrDefault(c => c.offset == int.Parse(instruction.Param.ToString()));
+                    ILCommande cmdDestination = retour.RetourneCommande(int.Parse(instruction.Param.ToString()));
                     if (cmdDestination == null)
                         throw new Exception("Un label n'a pas été trouvé");
                     else
@@ -280,6 +286,33 @@ namespace HookManager.Modeles
                     }
                 }
             }
+
+            // 3ieme passe pour les try/catch
+            foreach (ExceptionHandlingClause tryCatch in methodeACopier.GetMethodBody().ExceptionHandlingClauses)
+            {
+                try
+                {
+                    switch (tryCatch.Flags)
+                    {
+                        case ExceptionHandlingClauseOptions.Clause:
+                            retour.RetourneCommande(tryCatch.TryOffset).debutTry = true;
+                            ILCommande blockCatch = retour.RetourneCommande(tryCatch.HandlerOffset);
+                            blockCatch.debutCatch = true;
+                            blockCatch.exceptionCatch = tryCatch.CatchType;
+                            retour.RetourneCommande(tryCatch.HandlerOffset + tryCatch.HandlerLength).finBlock = true;
+                            break;
+                        case ExceptionHandlingClauseOptions.Finally:
+                            retour.RetourneCommande(tryCatch.HandlerOffset).debutFinally = true;
+                            retour.RetourneCommande(tryCatch.HandlerOffset + tryCatch.HandlerLength).finBlock = true;
+                            break;
+                    }
+                }
+                catch (Exception)
+                {
+                    throw new Exception("Erreur pendant la recherche du block try/catch (" + tryCatch.ToString() + ")");
+                }
+            }
+
             return retour;
         }
     }
@@ -304,12 +337,17 @@ namespace HookManager.Modeles
 
     internal class ILCommande
     {
-        internal int offset;
-        internal OpCode CodeIL;
+        internal int offset = 0;
+        internal OpCode CodeIL = OpCodes.Nop;
         internal byte ComplementCodeIL;
-        internal object Param;
-        internal Label marqueLabel;
-        internal bool possedeLabel;
+        internal object Param = null;
+        internal Label marqueLabel = default;
+        internal bool possedeLabel = false;
+        internal bool debutTry = false;
+        internal bool debutCatch = false;
+        internal bool finBlock = false;
+        internal Type exceptionCatch = null;
+        internal bool debutFinally = false;
 
         internal void MarqueDebutLabel(int numLabel)
         {
@@ -319,6 +357,15 @@ namespace HookManager.Modeles
 
         public void Emit(ILGenerator ilGen)
         {
+            if (debutTry)
+                ilGen.BeginExceptionBlock();
+            if (debutCatch)
+                ilGen.BeginCatchBlock(exceptionCatch);
+            if (debutFinally)
+                ilGen.BeginFinallyBlock();
+            if (finBlock)
+                ilGen.EndExceptionBlock();
+
             if (Param != null)
             {
                 switch (Param)
