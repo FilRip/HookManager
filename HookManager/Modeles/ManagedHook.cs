@@ -755,8 +755,9 @@ namespace HookManager.Modeles
             if (Debugger.IsAttached && HookPool.GetInstance().ModeDebugInterne)
                 optionsCompilateur.TempFiles = new TempFileCollection(System.IO.Path.GetTempPath(), true);
 
-            optionsCompilateur.ReferencedAssemblies.Add(Assembly.GetExecutingAssembly().Location);
-            optionsCompilateur.ReferencedAssemblies.Add(Assembly.GetEntryAssembly().Location);
+            foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+                if (!asm.IsDynamic && !asm.GlobalAssemblyCache && !string.IsNullOrWhiteSpace(asm.Location))
+                    optionsCompilateur.ReferencedAssemblies.Add(asm.Location);
 
             CompilerResults retour = HookPool.GetInstance().Compilateur().CompileAssemblyFromSource(optionsCompilateur, corps);
             if (retour.Errors.Count == 0)

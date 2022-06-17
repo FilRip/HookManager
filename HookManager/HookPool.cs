@@ -375,7 +375,7 @@ namespace HookManager
                 VerificationCommunes(evenement.RemoveMethod, supprimeAbonne);
                 VerifierCorrespondances(evenement.RemoveMethod, supprimeAbonne);
                 uint numHook = IncrNumHook();
-                hookSupprime = new(numHook, evenement.RemoveMethod, ajoutAbonne, autoActiver);
+                hookSupprime = new(numHook, evenement.RemoveMethod, supprimeAbonne, autoActiver);
                 if (hookSupprime != null)
                 {
                     _listeHook.Add(numHook, hookSupprime);
