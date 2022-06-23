@@ -21,6 +21,10 @@ namespace HookManagerSample
                         break;
                 }
                 throw new Exception("Fausse erreur");
+// C'est normal ce warning, c'est pour tester la copie de méthode
+#pragma warning disable CS0162
+                Console.WriteLine("Code a ne pas executer");
+#pragma warning restore CS0162
             }
             catch (Exception)
             {
@@ -30,6 +34,7 @@ namespace HookManagerSample
             {
                 AppelDepuisConstructeur();
             }
+            Console.WriteLine("Fin try/Catch");
         }
 
         private void AppelDepuisConstructeur()

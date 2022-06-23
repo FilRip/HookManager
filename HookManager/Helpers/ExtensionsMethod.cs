@@ -225,27 +225,26 @@ namespace HookManager.Helpers
                     listeParametres[0] = typeDeRetour;
                 nbParametres++;
             }
+
             foreach (ParameterInfo pi in methodeACopier.GetParameters())
                 listeParametres[nbParametres++] = pi.ParameterType;
+
+            // On copie le corps de la méthode
+            List<ILCommande> listeOpCodes = methodeACopier.LireMethodBody();
 
             DynamicMethod methodeCopiee = new(nomMethode, MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeDeRetour, listeParametres, methodeACopier.DeclaringType, false);
             ILGenerator ilGen = methodeCopiee.GetILGenerator(methodeACopier.GetMethodBody().GetILAsByteArray().Length);
 
-            // On copie déjà les variables locale de la méthode
+            // On copie ensuite les variables locale de la méthode
             if (methodeACopier.GetMethodBody().LocalVariables != null && methodeACopier.GetMethodBody().LocalVariables.Count > 0)
                 foreach (LocalVariableInfo lv in methodeACopier.GetMethodBody().LocalVariables)
                     ilGen.DeclareLocal(lv.LocalType, lv.IsPinned);
 
-            // On copie ensuite le corps de la méthode
-            List<ILCommande> listeOpCodes = methodeACopier.LireMethodBody();
-
             // On copie enfin les labels, par Reflection car ce n'est pas prévu par le NetFramework
-            List<int> listeLabels = listeOpCodes.Where(cmd => cmd.possedeLabel).Select(cmd => cmd.offset).ToList();
+            List<int> listeLabels = listeOpCodes.Where(cmd => cmd.debutLabel).Select(cmd => cmd.offset).ToList();
             if (listeLabels.Count > 0)
             {
-                int[] nouvelleListe = new int[listeLabels.Count];
-                for (int i = 0; i < nouvelleListe.Length; i++)
-                    nouvelleListe[i] = listeLabels[i];
+                int[] nouvelleListe = Enumerable.Repeat(-1, listeLabels.Count).ToArray();
                 typeof(ILGenerator).GetField("m_labelList", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(ilGen, nouvelleListe);
                 typeof(ILGenerator).GetField("m_labelCount", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(ilGen, listeLabels.Count);
             }

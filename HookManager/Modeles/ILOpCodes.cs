@@ -164,8 +164,6 @@ namespace HookManager.Modeles
                 OpCode commande = RetourneOpCode(listeCodes, ref offset, out byte complement);
                 cmd.CodeIL = commande;
                 cmd.ComplementCodeIL = complement;
-                if (listeGoto.Contains(offset))
-                    cmd.MarqueDebutLabel(numLabel++);
                 switch (commande.OperandType)
                 {
                     case OperandType.InlineBrTarget:
@@ -257,9 +255,47 @@ namespace HookManager.Modeles
                 retour.Add(cmd);
             }
 
-            // 2nd passe pour les "goto"
+            // 2nd passe pour les try/catch
+            ILCommande finCatch;
+            ExceptionHandlingClause tryCatch;
+            for (int i = 0; i < methodeACopier.GetMethodBody().ExceptionHandlingClauses.Count; i++)
+            {
+                tryCatch = methodeACopier.GetMethodBody().ExceptionHandlingClauses[i];
+                try
+                {
+                    switch (tryCatch.Flags)
+                    {
+                        case ExceptionHandlingClauseOptions.Clause:
+                            retour.RetourneCommande(tryCatch.TryOffset).debutTry = true;
+                            ILCommande blockCatch = retour.RetourneCommande(tryCatch.HandlerOffset);
+                            blockCatch.debutCatch = true;
+                            blockCatch.exceptionCatch = tryCatch.CatchType;
+                            finCatch = retour.RetourneCommande(tryCatch.HandlerOffset + tryCatch.HandlerLength);
+                            finCatch.finBlock = true;
+                            retour.Remove(retour[retour.IndexOf(finCatch) - 1]);
+                            break;
+                        case ExceptionHandlingClauseOptions.Finally:
+                            ExceptionHandlingClause tryPrecedent = methodeACopier.GetMethodBody().ExceptionHandlingClauses[i - 1];
+                            finCatch = retour.RetourneCommande(tryPrecedent.HandlerOffset + tryPrecedent.HandlerLength);
+                            finCatch.finBlock = false;
+                            retour[retour.IndexOf(finCatch) + 1].debutFinally = true;
+                            retour.Remove(finCatch);
+                            finCatch = retour.RetourneCommande(tryCatch.HandlerOffset + tryCatch.HandlerLength);
+                            finCatch = retour[retour.IndexOf(finCatch) - 1];
+                            finCatch.finBlock = true;
+                            break;
+                    }
+                }
+                catch (Exception)
+                {
+                    throw new Exception("Erreur pendant la recherche du block try/catch (" + tryCatch.ToString() + ")");
+                }
+            }
+
+            // 3ième passe pour les "goto"
             foreach (ILCommande instruction in retour)
             {
+                // Cas particulier Operand inlineSwitch
                 if (instruction.Param is int[] tableau)
                 {
                     List<Label> listeLabels = new();
@@ -273,6 +309,7 @@ namespace HookManager.Modeles
                     }
                     instruction.Param = listeLabels.ToArray();
                 }
+                // Cas classique (if par exemple)
                 else if (instruction.CodeIL.OperandType == OperandType.ShortInlineBrTarget || instruction.CodeIL.OperandType == OperandType.InlineBrTarget)
                 {
                     ILCommande cmdDestination = retour.RetourneCommande(int.Parse(instruction.Param.ToString()));
@@ -280,36 +317,10 @@ namespace HookManager.Modeles
                         throw new Exception("Un label n'a pas été trouvé");
                     else
                     {
-                        if (!cmdDestination.possedeLabel)
+                        if (!cmdDestination.debutLabel)
                             cmdDestination.MarqueDebutLabel(numLabel++);
                         instruction.Param = cmdDestination.marqueLabel;
                     }
-                }
-            }
-
-            // 3ieme passe pour les try/catch
-            foreach (ExceptionHandlingClause tryCatch in methodeACopier.GetMethodBody().ExceptionHandlingClauses)
-            {
-                try
-                {
-                    switch (tryCatch.Flags)
-                    {
-                        case ExceptionHandlingClauseOptions.Clause:
-                            retour.RetourneCommande(tryCatch.TryOffset).debutTry = true;
-                            ILCommande blockCatch = retour.RetourneCommande(tryCatch.HandlerOffset);
-                            blockCatch.debutCatch = true;
-                            blockCatch.exceptionCatch = tryCatch.CatchType;
-                            retour.RetourneCommande(tryCatch.HandlerOffset + tryCatch.HandlerLength).finBlock = true;
-                            break;
-                        case ExceptionHandlingClauseOptions.Finally:
-                            retour.RetourneCommande(tryCatch.HandlerOffset).debutFinally = true;
-                            retour.RetourneCommande(tryCatch.HandlerOffset + tryCatch.HandlerLength).finBlock = true;
-                            break;
-                    }
-                }
-                catch (Exception)
-                {
-                    throw new Exception("Erreur pendant la recherche du block try/catch (" + tryCatch.ToString() + ")");
                 }
             }
 
@@ -342,7 +353,7 @@ namespace HookManager.Modeles
         internal byte ComplementCodeIL;
         internal object Param = null;
         internal Label marqueLabel = default;
-        internal bool possedeLabel = false;
+        internal bool debutLabel = false;
         internal bool debutTry = false;
         internal bool debutCatch = false;
         internal bool finBlock = false;
@@ -352,19 +363,26 @@ namespace HookManager.Modeles
         internal void MarqueDebutLabel(int numLabel)
         {
             marqueLabel = (Label)typeof(Label).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0].Invoke(new object[] { numLabel });
-            possedeLabel = true;
+            debutLabel = true;
         }
 
         public void Emit(ILGenerator ilGen)
         {
+            if (debutLabel)
+                ilGen.MarkLabel(marqueLabel);
+
             if (debutTry)
                 ilGen.BeginExceptionBlock();
             if (debutCatch)
                 ilGen.BeginCatchBlock(exceptionCatch);
             if (debutFinally)
                 ilGen.BeginFinallyBlock();
-            if (finBlock)
+            if (CodeIL == OpCodes.Endfinally || finBlock)
+            {
                 ilGen.EndExceptionBlock();
+                if (CodeIL == OpCodes.Endfinally)
+                    return;
+            }
 
             if (Param != null)
             {
