@@ -240,13 +240,13 @@ namespace HookManager.Helpers
                 foreach (LocalVariableInfo lv in methodeACopier.GetMethodBody().LocalVariables)
                     ilGen.DeclareLocal(lv.LocalType, lv.IsPinned);
 
-            // On copie enfin les labels, par Reflection car ce n'est pas prévu par le NetFramework
-            List<int> listeLabels = listeOpCodes.Where(cmd => cmd.debutLabel).Select(cmd => cmd.offset).ToList();
-            if (listeLabels.Count > 0)
+            // On déclare enfin les labels, par Reflection car ce n'est pas prévu par le NetFramework
+            int listeLabels = listeOpCodes.Count(cmd => cmd.debutLabel);
+            if (listeLabels > 0)
             {
-                int[] nouvelleListe = Enumerable.Repeat(-1, listeLabels.Count).ToArray();
+                int[] nouvelleListe = Enumerable.Repeat(-1, listeLabels).ToArray();
                 typeof(ILGenerator).GetField("m_labelList", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(ilGen, nouvelleListe);
-                typeof(ILGenerator).GetField("m_labelCount", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(ilGen, listeLabels.Count);
+                typeof(ILGenerator).GetField("m_labelCount", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(ilGen, listeLabels);
             }
 
             // Et on ajoute le corps dans notre méthode Dynamic
