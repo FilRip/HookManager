@@ -240,14 +240,11 @@ namespace HookManager.Helpers
                 foreach (LocalVariableInfo lv in methodeACopier.GetMethodBody().LocalVariables)
                     ilGen.DeclareLocal(lv.LocalType, lv.IsPinned);
 
-            // On déclare enfin les labels, par Reflection car ce n'est pas prévu par le NetFramework
-            int listeLabels = listeOpCodes.Count(cmd => cmd.debutLabel);
-            if (listeLabels > 0)
-            {
-                int[] nouvelleListe = Enumerable.Repeat(-1, listeLabels).ToArray();
-                typeof(ILGenerator).GetField("m_labelList", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(ilGen, nouvelleListe);
-                typeof(ILGenerator).GetField("m_labelCount", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(ilGen, listeLabels);
-            }
+            // On déclare enfin les labels
+            int nbLabels = listeOpCodes.Count(cmd => cmd.debutLabel);
+            if (nbLabels > 0)
+                for (int i = 0; i < nbLabels; i++)
+                    ilGen.DefineLabel();
 
             // Et on ajoute le corps dans notre méthode Dynamic
             foreach (ILCommande cmd in listeOpCodes)
