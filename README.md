@@ -15,3 +15,6 @@ You can also replace/decorate Properties
 Support Interfaces too
 
 You can also replace events (beta, not recommended)
+
+Compatible Net Framework 4.x.x
+Net 5.0 under work
