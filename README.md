@@ -7,11 +7,11 @@ You can also call same method for 2,3,... others methods. You just need to have 
 
 You can also use Attribute to automaticaly replace/decorate methods at start up<br><br>
 
-Compatible release or debug, x86, x64 or AnyCPU, GAC too (and JIT with some limits).
+Compatible release or debug, x86, x64 or AnyCPU, GAC too (and JIT with some limits).<br>
 Compatible with a debugger attached (tested with VisualStudio Debugger)<br><br>
 
-You can also decorate events
-You can also replace/decorate Properties
+You can also decorate events<br>
+You can also replace/decorate Properties<br>
 Support Interfaces too<br><br>
 
 You can also replace/decorate constructors (beta, not recommended yet. Try it and if you have a crash or an error, please report me)<br><br>
