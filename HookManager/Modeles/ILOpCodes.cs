@@ -268,7 +268,8 @@ namespace HookManager.Modeles
                         case ExceptionHandlingClauseOptions.Clause:
                             retour.RetourneCommande(tryCatch.TryOffset).debutTry = true;
                             ILCommande blockCatch = retour.RetourneCommande(tryCatch.HandlerOffset);
-                            blockCatch.debutCatch = true;
+                            if (retour[retour.IndexOf(blockCatch) - 1].CodeIL == OpCodes.Leave || retour[retour.IndexOf(blockCatch) - 1].CodeIL == OpCodes.Leave_S)
+                                retour.Remove(retour[retour.IndexOf(blockCatch) - 1]); blockCatch.debutCatch = true;
                             blockCatch.exceptionCatch = tryCatch.CatchType;
                             finCatch = retour.RetourneCommande(tryCatch.HandlerOffset + tryCatch.HandlerLength);
                             finCatch.finBlock = true;
@@ -327,24 +328,6 @@ namespace HookManager.Modeles
             return retour;
         }
     }
-
-    /*internal enum ECallConvention : byte
-    {
-        Default = 0,
-        C = 1,
-        StdCall = 2,
-        ThisCall = 3,
-        FastCall = 4,
-        VarArg = 5,
-        Generic = 10,
-    }
-
-    internal class ILCall
-    {
-        internal bool avecThis;
-        internal byte call;
-        internal ECallConvention ConventionAppel;
-    }*/
 
     internal class ILCommande
     {
