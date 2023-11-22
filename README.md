@@ -1,5 +1,5 @@
 # HookManager
-Dyanmicaly replace method (managed or unmanaged/native) by another one (managed), at runtime. Or decorate : call a method before and after another one.
+Dynamicaly replace method (managed or unmanaged/native) by another one (managed), at runtime. Or decorate : call a method before and after another one.
 
 You can also call older method (replaced) in new method/decorate method
 
