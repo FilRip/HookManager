@@ -6,16 +6,16 @@ using HookManager.Helpers;
 namespace HookManager.Modeles
 {
     /// <summary>
-    /// Remplace une méthode par une autre (l'ancienne devient inaccessible)
+    /// Replace definetly a method by another one. The older one is no more accessible
     /// </summary>
-    public sealed class MethodeRemplacementHook
+    public sealed class MethodReplacementHook
     {
         private readonly MethodInfo _methodFrom, _methodTo;
         private readonly uint _numHook;
         private bool _actif;
 
         /// <summary>
-        /// Numéro identifiant la substitution dans le HookPool
+        /// Internal Id of this replacement in HookPool
         /// </summary>
         public uint NumHook
         {
@@ -26,9 +26,9 @@ namespace HookManager.Modeles
         }
 
         /// <summary>
-        /// Méthode remplacée
+        /// Method to replace
         /// </summary>
-        public MethodInfo MethodeRemplacee
+        public MethodInfo MethodFrom
         {
             get
             {
@@ -37,9 +37,9 @@ namespace HookManager.Modeles
         }
 
         /// <summary>
-        /// Méthode de remplacement
+        /// New method
         /// </summary>
-        public MethodInfo MethodeDeRemplacement
+        public MethodInfo MethodTo
         {
             get
             {
@@ -47,7 +47,7 @@ namespace HookManager.Modeles
             }
         }
 
-        internal MethodeRemplacementHook(uint numHook, MethodInfo methodeSource, MethodInfo methodeDestination, bool autoActiver = true)
+        internal MethodReplacementHook(uint numHook, MethodInfo methodeSource, MethodInfo methodeDestination, bool autoActiver = true)
         {
             _numHook = numHook;
             _methodFrom = methodeSource;
@@ -66,8 +66,9 @@ namespace HookManager.Modeles
         }
 
         /// <summary>
-        /// Active le remplacement de la méthode
+        /// Active the replacement of method
         /// </summary>
+        /// <remarks>Can't be revert</remarks>
         public void RemplaceMethode()
         {
             if (!_actif)
@@ -78,9 +79,9 @@ namespace HookManager.Modeles
         }
 
         /// <summary>
-        /// Le remplacement de la méthode est=-il actif ou non
+        /// Does the replacement is active or not
         /// </summary>
-        public bool EstActif
+        public bool IsEnabled
         {
             get
             {

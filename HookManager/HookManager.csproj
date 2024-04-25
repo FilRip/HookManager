@@ -135,7 +135,7 @@
     <Compile Include="Modeles\GacHook.cs" />
     <Compile Include="Modeles\ILOpCodes.cs" />
     <Compile Include="Modeles\ManagedHook.cs" />
-    <Compile Include="Modeles\MethodeRemplacementHook.cs" />
+    <Compile Include="Modeles\MethodReplacementHook.cs" />
     <Compile Include="Modeles\NativeHook.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

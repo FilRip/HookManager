@@ -22,7 +22,7 @@ namespace HookManager
         private Dictionary<uint, ManagedHook> _listHook;
         private Dictionary<MethodInfo, GacHook> _listGacHook;
         private Dictionary<NativeMethod, NativeHook> _listNativeHook;
-        private Dictionary<uint, MethodeRemplacementHook> _listReplacement;
+        private Dictionary<uint, MethodReplacementHook> _listReplacement;
         private Dictionary<uint, ManagedHook> _listDecoration;
 
         private readonly object _lockNumHook;
@@ -474,12 +474,12 @@ namespace HookManager
         /// <param name="methodFrom">Méthode managée à remplacer</param>
         /// <param name="methodTo">Méthode managée appelée à la place</param>
         /// <param name="autoEnable">Active ou non tout de suite le remplacement</param>
-        public MethodeRemplacementHook AddReplacement(MethodInfo methodFrom, MethodInfo methodTo, bool autoEnable = true)
+        public MethodReplacementHook AddReplacement(MethodInfo methodFrom, MethodInfo methodTo, bool autoEnable = true)
         {
             CommonsCheck(methodFrom, methodTo);
             CheckMatches(methodFrom, methodTo);
             uint numHook = IncrNumHook();
-            MethodeRemplacementHook hook = new(numHook, methodFrom, methodTo, autoEnable);
+            MethodReplacementHook hook = new(numHook, methodFrom, methodTo, autoEnable);
             _listReplacement.Add(numHook, hook);
             return hook;
         }
@@ -490,7 +490,7 @@ namespace HookManager
         /// <param name="methodFrom">Nom de la méthode (avec le type, et l'espace de nom au besoin) à remplacer. Exemple : MonNameSpace.MaClasse.MaMethode</param>
         /// <param name="methodTo">Nom de la méthode (avec le type, et l'espace de nom au besoin) de remplacement. Exemple : MonNameSpace.MaClasse.MaMethode</param>
         /// <param name="autoEnable">Active ou non tout de suite le remplacement</param>
-        public MethodeRemplacementHook AddReplacement(string methodFrom, string methodTo, bool autoEnable = true)
+        public MethodReplacementHook AddReplacement(string methodFrom, string methodTo, bool autoEnable = true)
         {
             MethodInfo miFrom, miTo;
 
@@ -642,7 +642,7 @@ namespace HookManager
 
         private bool MethodAlreadyReplace(MethodBase methodFrom)
         {
-            return (_listHook.Values.Any(hook => hook.FromMethod == methodFrom) || _listReplacement.Values.Any(hook => hook.MethodeRemplacee == methodFrom));
+            return (_listHook.Values.Any(hook => hook.FromMethod == methodFrom) || _listReplacement.Values.Any(hook => hook.MethodFrom == methodFrom));
         }
 
         /// <summary>
@@ -687,22 +687,22 @@ namespace HookManager
         /// Retourne une substitution d'une méthode par une autre
         /// </summary>
         /// <param name="methodSource">Méthode qui a été remplacée</param>
-        public MethodeRemplacementHook ReturnReplacementHook(MethodInfo methodSource)
+        public MethodReplacementHook ReturnReplacementHook(MethodInfo methodSource)
         {
-            return (_listReplacement.Values.SingleOrDefault(hook => hook.MethodeRemplacee == methodSource));
+            return (_listReplacement.Values.SingleOrDefault(hook => hook.MethodFrom == methodSource));
         }
 
         /// <summary>
         /// Retourne le premier remplacement de méthode trouvée (si il y en a plusieurs), par rapport à sa nouvelle méthode de remplacement en cours
         /// </summary>
-        public MethodeRemplacementHook ReturnReplacementHook()
+        public MethodReplacementHook ReturnReplacementHook()
         {
             StackFrame[] piles = new StackTrace(ModeInternalDebug).GetFrames();
             for (int i = piles.Length - 1; i >= 0; i--)
             {
                 if (piles[i].GetMethod() is MethodInfo methodeSource)
                 {
-                    MethodeRemplacementHook mrh = _listReplacement.Values.FirstOrDefault(hook => hook.MethodeDeRemplacement == methodeSource);
+                    MethodReplacementHook mrh = _listReplacement.Values.FirstOrDefault(hook => hook.MethodTo == methodeSource);
                     if (mrh != null)
                         return mrh;
                 }
@@ -713,22 +713,22 @@ namespace HookManager
         /// <summary>
         /// Retourne toutes les méthodes que remplace une méthode en particulier
         /// </summary>
-        public MethodeRemplacementHook[] ReturnReplacementHooks(MethodInfo methodeRemplacement)
+        public MethodReplacementHook[] ReturnReplacementHooks(MethodInfo methodeRemplacement)
         {
-            return (_listReplacement.Values.Where(hook => hook.MethodeDeRemplacement == methodeRemplacement).ToArray());
+            return (_listReplacement.Values.Where(hook => hook.MethodTo == methodeRemplacement).ToArray());
         }
 
         /// <summary>
         /// Retourne toutes les méthodes que remplace la premère méthode de remplacement en cours trouvée
         /// </summary>
-        public MethodeRemplacementHook[] ReturnReplacementHooks()
+        public MethodReplacementHook[] ReturnReplacementHooks()
         {
             StackFrame[] piles = new StackTrace(ModeInternalDebug).GetFrames();
             for (int i = piles.Length - 1; i >= 0; i--)
             {
                 if (piles[i].GetMethod() is MethodInfo methodeSource)
                 {
-                    MethodeRemplacementHook[] mrh = _listReplacement.Values.Where(hook => hook.MethodeDeRemplacement == methodeSource).ToArray();
+                    MethodReplacementHook[] mrh = _listReplacement.Values.Where(hook => hook.MethodTo == methodeSource).ToArray();
                     if (mrh.Length > 0)
                         return mrh;
                 }
