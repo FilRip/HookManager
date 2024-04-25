@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -6,7 +7,7 @@ namespace HookManager.Exceptions
     /// Erreur, la méthode de remplacement ne dispose pas assez de paramètre, par rapport à sa méthode d'origine/remplacée
     /// </summary>
     [Serializable()]
-    public class NotEnoughArgument : HookManagerException
+    public class NotEnoughArgumentException : HookManagerException
     {
         private readonly int _nbParamSource, _nbParamDestination;
 
@@ -15,7 +16,7 @@ namespace HookManager.Exceptions
         /// </summary>
         /// <param name="nbParamSource">Nombre de paramètres de la méthode à remplacer</param>
         /// <param name="nbParamDestination">Nombre de paramètres de la méthode de remplacement</param>
-        internal NotEnoughArgument(int nbParamSource, int nbParamDestination) : base()
+        internal NotEnoughArgumentException(int nbParamSource, int nbParamDestination) : base()
         {
             _nbParamSource = nbParamSource;
             _nbParamDestination = nbParamDestination;
@@ -51,5 +52,8 @@ namespace HookManager.Exceptions
                 return _nbParamDestination;
             }
         }
+
+        /// <inheritdoc/>
+        protected NotEnoughArgumentException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

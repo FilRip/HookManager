@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -6,14 +7,14 @@ namespace HookManager.Exceptions
     /// Erreur, la méthode que vous tentez de décorer est déjà décorée, consultez HookPool pour la liste
     /// </summary>
     [Serializable()]
-    public class MethodeAlreadyDecorated : HookManagerException
+    public class MethodeAlreadyDecoratedException : HookManagerException
     {
         private readonly string _nomMethode;
 
         /// <summary>
         /// Erreur, la méthode que vous tentez de décorer est déjà décorée, consultez HookPool pour la liste
         /// </summary>
-        internal MethodeAlreadyDecorated(string nomMethode) : base()
+        internal MethodeAlreadyDecoratedException(string nomMethode) : base()
         {
             _nomMethode = nomMethode;
         }
@@ -34,5 +35,8 @@ namespace HookManager.Exceptions
         {
             get { return _nomMethode; }
         }
+
+        /// <inheritdoc/>
+        protected MethodeAlreadyDecoratedException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

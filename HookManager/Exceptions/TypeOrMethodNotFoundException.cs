@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -7,7 +8,7 @@ namespace HookManager.Exceptions
     /// Assurez-vous de l'ortographe, et que l'assembly a bien été chargé avant d'appeler le remplacement de la méthode
     /// </summary>
     [Serializable()]
-    public class TypeOrMethodNotFound : HookManagerException
+    public class TypeOrMethodNotFoundException : HookManagerException
     {
         private readonly string _type, _methode;
 
@@ -17,7 +18,7 @@ namespace HookManager.Exceptions
         /// </summary>
         /// <param name="leType">Nom du type dans lequel la méthode à été recherchée</param>
         /// <param name="laMethode">Nom de la méthode recherchée (non trouvée)</param>
-        internal TypeOrMethodNotFound(string leType, string laMethode) : base()
+        internal TypeOrMethodNotFoundException(string leType, string laMethode) : base()
         {
             _type = leType;
             _methode = laMethode;
@@ -55,5 +56,8 @@ namespace HookManager.Exceptions
                 return _methode;
             }
         }
+
+        /// <inheritdoc/>
+        protected TypeOrMethodNotFoundException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

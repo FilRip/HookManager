@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -7,7 +8,7 @@ namespace HookManager.Exceptions
     /// Pour l'instant, cette implémentation est en cours
     /// </summary>
     [Serializable()]
-    public class CantHookDynamicMethod : HookManagerException
+    public class CantHookDynamicMethodException : HookManagerException
     {
         private readonly string _nomMethod;
 
@@ -15,7 +16,7 @@ namespace HookManager.Exceptions
         /// Erreur, impossible de substituer une méthode créée dynamiquement pendant l'exécution<br/>
         /// Pour l'instant, cette implémentation est en cours
         /// </summary>
-        internal CantHookDynamicMethod(string nomMethode) : base()
+        internal CantHookDynamicMethodException(string nomMethode) : base()
         {
             _nomMethod = nomMethode;
         }
@@ -39,5 +40,8 @@ namespace HookManager.Exceptions
                 return _nomMethod;
             }
         }
+
+        /// <inheritdoc/>
+        protected CantHookDynamicMethodException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

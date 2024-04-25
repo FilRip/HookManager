@@ -4,9 +4,10 @@ using HookManager.Modeles;
 
 namespace HookManagerSample
 {
+#pragma warning disable S1118 // Utility classes should not have public constructors
     public class ClasseRemplaceInterface
     {
-        // Warning désactivé. C'est normal, c'est pour les tests, cette nouvelle méthode, remplaçant l'ancienne, n'utilise pas forcément tous les paramètres
+        // Warning disabled, it's for test
 #pragma warning disable IDE0060
         public static void TestMoi(object instance, ManagedHook mg)
 #pragma warning restore IDE0060
@@ -14,4 +15,5 @@ namespace HookManagerSample
             Console.WriteLine("Hooked Interface implementation");
         }
     }
+#pragma warning restore S1118 // Utility classes should not have public constructors
 }

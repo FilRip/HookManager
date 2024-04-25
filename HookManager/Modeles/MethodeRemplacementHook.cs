@@ -72,7 +72,7 @@ namespace HookManager.Modeles
         {
             if (!_actif)
             {
-                _methodFrom.RemplaceMethodeManagee(_methodTo);
+                _methodFrom.ReplaceManagedMethod(_methodTo);
                 _actif = true;
             }
         }

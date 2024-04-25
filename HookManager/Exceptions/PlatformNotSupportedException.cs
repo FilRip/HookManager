@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -7,14 +8,14 @@ namespace HookManager.Exceptions
     /// Le type de plateforme de compilation n'est pas supporté par cette librairie
     /// </summary>
     [Serializable()]
-    public class PlateformeNonSupportee : HookManagerException
+    public class PlatformNotSupportedException : HookManagerException
     {
         private readonly ProcessorArchitecture _plateforme;
 
         /// <summary>
         /// Le type de plateforme de compilation n'est pas supporté par cette librairie
         /// </summary>
-        internal PlateformeNonSupportee(ProcessorArchitecture plateforme) : base()
+        internal PlatformNotSupportedException(ProcessorArchitecture plateforme) : base()
         {
             _plateforme = plateforme;
         }
@@ -38,5 +39,8 @@ namespace HookManager.Exceptions
                 return _plateforme;
             }
         }
+
+        /// <inheritdoc/>
+        protected PlatformNotSupportedException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

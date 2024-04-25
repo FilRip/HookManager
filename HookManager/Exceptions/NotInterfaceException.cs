@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -6,7 +7,7 @@ namespace HookManager.Exceptions
     /// Erreur, le type fournit, pour un Remplacement de toutes ou parties des méthodes d'une interface, n'est pas un type d'Interface
     /// </summary>
     [Serializable()]
-    public class NotInterface : HookManagerException
+    public class NotInterfaceException : HookManagerException
     {
         private readonly Type _type;
 
@@ -14,7 +15,7 @@ namespace HookManager.Exceptions
         /// Erreur, le type fournit, pour un Remplacement de toutes ou parties des méthodes d'une interface, n'est pas un type d'Interface
         /// </summary>
         /// <param name="TypeFournit">Type fournit</param>
-        internal NotInterface(Type TypeFournit) : base()
+        internal NotInterfaceException(Type TypeFournit) : base()
         {
             _type = TypeFournit;
         }
@@ -38,5 +39,8 @@ namespace HookManager.Exceptions
                 return _type;
             }
         }
+
+        /// <inheritdoc/>
+        protected NotInterfaceException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

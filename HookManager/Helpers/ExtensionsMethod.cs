@@ -17,10 +17,10 @@ namespace HookManager.Helpers
     public static class ExtensionsMethod
     {
         /// <summary>
-        /// Retourne le pointeur mémoire d'une méthode, dans un environement 32 bits
+        /// Return the pointer of a managed method in a 32 bits environment
         /// </summary>
         /// <param name="methode">Méthode pour laquelle on recherche son pointeur mémoire</param>
-        internal static int GetPointeurMethode_x86(this MethodBase methode)
+        internal static int GetMethodPointer_x86(this MethodBase methode)
         {
             if (methode.IsVirtual)
             {
@@ -36,10 +36,10 @@ namespace HookManager.Helpers
         }
 
         /// <summary>
-        /// Retourne le pointeur mémoire d'une méthode, dans un environement 64 bits
+        /// Return the pointer of a managed method in a 64 bits environment
         /// </summary>
         /// <param name="methode">Méthode pour laquelle on recherche son pointeur mémoire</param>
-        internal static long GetPointeurMethode_x64(this MethodBase methode)
+        internal static long GetMethodPointer_x64(this MethodBase methode)
         {
             if (methode.IsVirtual)
             {
@@ -54,14 +54,14 @@ namespace HookManager.Helpers
                 return methode.MethodHandle.Value.ToInt64() + IntPtr.Size;
         }
 
-        internal static void RemplaceMethodeManagee(this MethodBase methodToReplace, MethodBase methodToInject)
+        internal static void ReplaceManagedMethod(this MethodBase methodToReplace, MethodBase methodToInject)
         {
             if (IntPtr.Size == 4)
             {
                 int ptrInject, ptrCible;
 
-                ptrCible = methodToReplace.GetPointeurMethode_x86();
-                ptrInject = methodToInject.GetPointeurMethode_x86();
+                ptrCible = methodToReplace.GetMethodPointer_x86();
+                ptrInject = methodToInject.GetMethodPointer_x86();
 
                 if (Debugger.IsAttached)
                 {
@@ -80,8 +80,8 @@ namespace HookManager.Helpers
             {
                 long ptrInject, ptrCible;
 
-                ptrCible = methodToReplace.GetPointeurMethode_x64();
-                ptrInject = methodToInject.GetPointeurMethode_x64();
+                ptrCible = methodToReplace.GetMethodPointer_x64();
+                ptrInject = methodToInject.GetMethodPointer_x64();
 
                 if (Debugger.IsAttached)
                 {
@@ -106,9 +106,9 @@ namespace HookManager.Helpers
         /// <param name="MethodeARemplacer">Nom de la méthode (avec le type, et l'espace de nom au besoin) à remplacer. Exemple : MonNameSpace.MaClasse.MaMethode</param>
         /// <param name="MethodeDeRemplacement">Nom de la méthode (avec le type, et l'espace de nom au besoin) de remplacement. Exemple : MonNameSpace.MaClasse.MaMethode</param>
         /// <param name="autoActiver">Active ou non tout de suite le remplacement</param>
-        public static ManagedHook RemplaceMethode(this MethodInfo MethodeARemplacer, string MethodeDeRemplacement, bool autoActiver = true)
+        public static ManagedHook ReplaceMethod(this MethodInfo MethodeARemplacer, string MethodeDeRemplacement, bool autoActiver = true)
         {
-            return HookPool.GetInstance().AjouterHook(MethodeARemplacer.DeclaringType.Namespace + "." + MethodeARemplacer.DeclaringType.Name + "." + MethodeARemplacer.Name, MethodeDeRemplacement, autoActiver);
+            return HookPool.GetInstance().AddHook(MethodeARemplacer.DeclaringType.Namespace + "." + MethodeARemplacer.DeclaringType.Name + "." + MethodeARemplacer.Name, MethodeDeRemplacement, autoActiver);
         }
 
         /// <summary>
@@ -117,9 +117,9 @@ namespace HookManager.Helpers
         /// <param name="MethodeARemplacer">Nom de la méthode (avec le type, et l'espace de nom au besoin) à remplacer. Exemple : MonNameSpace.MaClasse.MaMethode</param>
         /// <param name="MethodeDeRemplacement">Nom de la méthode (avec le type, et l'espace de nom au besoin) de remplacement. Exemple : MonNameSpace.MaClasse.MaMethode</param>
         /// <param name="autoActiver">Active ou non tout de suite le remplacement</param>
-        public static ManagedHook RemplaceMethode(this MethodInfo MethodeARemplacer, MethodInfo MethodeDeRemplacement, bool autoActiver = true)
+        public static ManagedHook ReplaceMethod(this MethodInfo MethodeARemplacer, MethodInfo MethodeDeRemplacement, bool autoActiver = true)
         {
-            return HookPool.GetInstance().AjouterHook(MethodeARemplacer, MethodeDeRemplacement, autoActiver);
+            return HookPool.GetInstance().AddHook(MethodeARemplacer, MethodeDeRemplacement, autoActiver);
         }
 
         /// <summary>
@@ -147,7 +147,7 @@ namespace HookManager.Helpers
             if (string.IsNullOrWhiteSpace(nomNamespace))
                 nomNamespace = new StackTrace().GetFrames()[1].GetMethod().DeclaringType.Namespace;
             Type typeClasse;
-            typeClasse = AppDomain.CurrentDomain.GetAssemblies().RechercheType(nomNamespace + "." + nomType);
+            typeClasse = AppDomain.CurrentDomain.GetAssemblies().SearchType(nomNamespace + "." + nomType);
             if (typeClasse == null)
                 return null;
             MethodInfo mi = null;
@@ -155,7 +155,10 @@ namespace HookManager.Helpers
             {
                 mi = typeClasse.GetMethod(nomMethode, filtre);
             }
-            catch (Exception) { }
+            catch (Exception)
+            {
+                // Ignore errors
+            }
             return mi;
         }
 
@@ -182,62 +185,62 @@ namespace HookManager.Helpers
             return GetMethodInfo(new StackTrace().GetFrames()[1].GetMethod().DeclaringType.Namespace, nomType, nomMethode, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
         }
 
-        internal static MethodInfo RetourneMethodeParLeNomComplet(string nomMethode)
+        internal static MethodInfo GetMethodByFullName(string methodName)
         {
-            string nomClasse, nomMethodeSplittee;
-            Type classeSource;
+            string className, methodNameSeparated;
+            Type classSource;
             MethodInfo mi;
 
-            if (nomMethode.IndexOf(".") > 0)
+            if (methodName.IndexOf(".") >= 0)
             {
-                nomClasse = nomMethode.Substring(0, nomMethode.LastIndexOf("."));
-                classeSource = AppDomain.CurrentDomain.GetAssemblies().RechercheType(nomClasse);
-                if (classeSource == null)
-                    throw new NoTypeInName(nomMethode);
-                nomMethodeSplittee = nomMethode.Substring(nomMethode.LastIndexOf(".") + 1);
-                mi = classeSource.GetMethod(nomMethodeSplittee, HookPool.GetInstance().FiltresParDefaut);
+                className = methodName.Substring(0, methodName.LastIndexOf("."));
+                classSource = AppDomain.CurrentDomain.GetAssemblies().SearchType(className);
+                if (classSource == null)
+                    throw new NoTypeInNameException(methodName);
+                methodNameSeparated = methodName.Substring(methodName.LastIndexOf(".") + 1);
+                mi = classSource.GetMethod(methodNameSeparated, HookPool.GetInstance().DefaultFilters);
                 if (mi == null)
-                    throw new TypeOrMethodNotFound(nomClasse, nomMethodeSplittee);
+                    throw new TypeOrMethodNotFoundException(className, methodNameSeparated);
                 return mi;
             }
             else
-                throw new NoTypeInName(nomMethode);
+                throw new NoTypeInNameException(methodName);
         }
 
-        internal static DynamicMethod CopierMethode(this MethodBase methodeACopier, string nomMethode = "")
+        internal static DynamicMethod CopyMethod(this MethodBase methodToCopy, string methodeName = "")
         {
-            if (string.IsNullOrWhiteSpace(nomMethode))
-                nomMethode = methodeACopier.Name + "_Copy";
+            if (string.IsNullOrWhiteSpace(methodeName))
+                methodeName = methodToCopy.Name + "_Copy";
 
             Type typeDeRetour = typeof(void);
-            if (methodeACopier is MethodInfo mi)
+            if (methodToCopy is MethodInfo mi)
                 typeDeRetour = mi.ReturnType;
 
-            int nbParametres = methodeACopier.GetParameters().Length;
-            if (!methodeACopier.IsStatic || methodeACopier is ConstructorInfo)
+            int nbParametres = methodToCopy.GetParameters().Length;
+            if (!methodToCopy.IsStatic || methodToCopy is ConstructorInfo)
                 nbParametres += 1;
             Type[] listeParametres = new Type[nbParametres];
-            if (!methodeACopier.IsStatic || methodeACopier is ConstructorInfo)
+            if (!methodToCopy.IsStatic || methodToCopy is ConstructorInfo)
             {
-                if (methodeACopier is ConstructorInfo ci)
+                if (methodToCopy is ConstructorInfo ci)
                     listeParametres[0] = ci.DeclaringType;
                 else
                     listeParametres[0] = typeDeRetour;
                 nbParametres++;
             }
 
-            foreach (ParameterInfo pi in methodeACopier.GetParameters())
+            foreach (ParameterInfo pi in methodToCopy.GetParameters())
                 listeParametres[nbParametres++] = pi.ParameterType;
 
             // On copie le corps de la méthode
-            List<ILCommande> listeOpCodes = methodeACopier.LireMethodBody();
+            List<ILCommande> listeOpCodes = methodToCopy.LireMethodBody();
 
-            DynamicMethod methodeCopiee = new(nomMethode, MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeDeRetour, listeParametres, methodeACopier.DeclaringType, false);
-            ILGenerator ilGen = methodeCopiee.GetILGenerator(methodeACopier.GetMethodBody().GetILAsByteArray().Length);
+            DynamicMethod methodeCopiee = new(methodeName, MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeDeRetour, listeParametres, methodToCopy.DeclaringType, false);
+            ILGenerator ilGen = methodeCopiee.GetILGenerator(methodToCopy.GetMethodBody().GetILAsByteArray().Length);
 
             // On copie ensuite les variables locale de la méthode
-            if (methodeACopier.GetMethodBody().LocalVariables != null && methodeACopier.GetMethodBody().LocalVariables.Count > 0)
-                foreach (LocalVariableInfo lv in methodeACopier.GetMethodBody().LocalVariables)
+            if (methodToCopy.GetMethodBody().LocalVariables != null && methodToCopy.GetMethodBody().LocalVariables.Count > 0)
+                foreach (LocalVariableInfo lv in methodToCopy.GetMethodBody().LocalVariables)
                     ilGen.DeclareLocal(lv.LocalType, lv.IsPinned);
 
             // On déclare enfin les labels

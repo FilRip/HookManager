@@ -77,6 +77,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>HookManagerSample.Program</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -87,6 +90,7 @@
     <Compile Include="Classe2.cs" />
     <Compile Include="Classe3.cs" />
     <Compile Include="ClasseRemplaceInterface.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="IInterface1.cs" />
     <Compile Include="NativeHookDemo.cs" />
     <Compile Include="Program.cs" />

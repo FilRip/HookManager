@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace HookManager.Helpers
 {
-    internal static class WinAPI
+    internal static class WinApi
     {
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern bool VirtualProtect(IntPtr lpAddress, IntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);

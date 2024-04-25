@@ -22,7 +22,7 @@ namespace HookManager.Helpers
             return false;
         }
 
-        internal static Type RechercheType(this Assembly[] listeAssembly, string nomType)
+        internal static Type SearchType(this Assembly[] listeAssembly, string nomType)
         {
             foreach (Assembly ass in listeAssembly)
                 if (ass.GetType(nomType, false) != null)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -6,7 +7,7 @@ namespace HookManager.Exceptions
     /// Erreur, impossible de remplacer une méthode d'un assembly compilé avec l'option "JIT Optimized"
     /// </summary>
     [Serializable()]
-    public class CantHookJITOptimized : HookManagerException
+    public class CantHookJitOptimizedException : HookManagerException
     {
         private readonly string _nomAssembly;
         private readonly string _nomMethode;
@@ -15,7 +16,7 @@ namespace HookManager.Exceptions
         /// Erreur, impossible de remplacer une méthode d'un assembly compilé avec l'option "JIT Optimized"
         /// </summary>
         /// <param name="nomAssembly">Nom de l'Assembly en cause</param>
-        internal CantHookJITOptimized(string nomAssembly) : base()
+        internal CantHookJitOptimizedException(string nomAssembly) : base()
         {
             _nomAssembly = nomAssembly;
         }
@@ -25,7 +26,7 @@ namespace HookManager.Exceptions
         /// </summary>
         /// <param name="nomAssembly">Nom de l'Assembly en cause</param>
         /// <param name="nomMethode">Nom de la méthode en cause</param>
-        internal CantHookJITOptimized(string nomAssembly, string nomMethode) : this(nomAssembly)
+        internal CantHookJitOptimizedException(string nomAssembly, string nomMethode) : this(nomAssembly)
         {
             _nomMethode = nomMethode;
         }
@@ -63,5 +64,8 @@ namespace HookManager.Exceptions
                 return _nomMethode;
             }
         }
+
+        /// <inheritdoc/>
+        protected CantHookJitOptimizedException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

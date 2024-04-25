@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -6,14 +7,14 @@ namespace HookManager.Exceptions
     /// Erreur lors de la tentative de repaginer un espace mémoire d'après un pointeur mémoire
     /// </summary>
     [Serializable()]
-    public class ErreurRePaginationMemoireException : HookManagerException
+    public class RepaginateMemoryException : HookManagerException
     {
         private readonly IntPtr _pointeurMemoire;
 
         /// <summary>
         /// Erreur lors de la tentative de repaginer un espace mémoire d'après un pointeur mémoire
         /// </summary>
-        internal ErreurRePaginationMemoireException(IntPtr pointeurMemoire) : base()
+        internal RepaginateMemoryException(IntPtr pointeurMemoire) : base()
         {
             _pointeurMemoire = pointeurMemoire;
         }
@@ -23,16 +24,26 @@ namespace HookManager.Exceptions
         {
             get
             {
-                return $"Erreur de repagination de la mémoire. Impossible d'accéder à la mémoire 0x{_pointeurMemoire.ToInt32():X16}";
+                return $"Error in repaginate memory. Unable to access to memory at address 0x{_pointeurMemoire.ToInt32():X16}";
             }
         }
 
         /// <summary>
         /// Pointeur vers la mémoire en cause
         /// </summary>
-        public IntPtr PointeurMemoire
+        public IntPtr MemoryPtr
         {
             get { return _pointeurMemoire; }
+        }
+
+        /// <inheritdoc/>
+        protected RepaginateMemoryException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+
+        /// <inheritdoc/>
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue(nameof(MemoryPtr), _pointeurMemoire);
         }
     }
 }

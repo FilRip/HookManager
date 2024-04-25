@@ -6,7 +6,7 @@ namespace HookManagerSample
     {
         public void TestMoi()
         {
-            Console.WriteLine("Méthode d'implémentation d'interface d'origine");
+            Console.WriteLine("Method originale implemented from interface");
         }
     }
 }

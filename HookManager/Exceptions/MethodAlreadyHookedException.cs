@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -6,14 +7,14 @@ namespace HookManager.Exceptions
     /// Erreur, la méthode que vous tentez de remplacer est déjà remplacée, consultez HookPool pour la liste
     /// </summary>
     [Serializable()]
-    public class MethodAlreadyHooked : HookManagerException
+    public class MethodAlreadyHookedException : HookManagerException
     {
         private readonly string _nomMethode;
 
         /// <summary>
         /// Erreur, la méthode que vous tentez de remplacer est déjà remplacée, consultez HookPool pour la liste
         /// </summary>
-        internal MethodAlreadyHooked(string nomMethode) : base()
+        internal MethodAlreadyHookedException(string nomMethode) : base()
         {
             _nomMethode = nomMethode;
         }
@@ -34,5 +35,8 @@ namespace HookManager.Exceptions
         {
             get { return _nomMethode; }
         }
+
+        /// <inheritdoc/>
+        protected MethodAlreadyHookedException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

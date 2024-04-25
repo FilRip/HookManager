@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -6,7 +7,7 @@ namespace HookManager.Exceptions
     /// Erreur, le type de retour de la méthode de remplacement n'est pas le même (ou héritant) que le type de retour de la méthode d'origine/remplacée
     /// </summary>
     [Serializable()]
-    public class WrongReturnType : HookManagerException
+    public class WrongReturnTypeException : HookManagerException
     {
         private readonly Type _typeSource;
         private readonly Type _typeDestination;
@@ -16,7 +17,7 @@ namespace HookManager.Exceptions
         /// </summary>
         /// <param name="typeSource">Type d'origine</param>
         /// <param name="typeDestination">Type de remplacement</param>
-        internal WrongReturnType(Type typeSource, Type typeDestination) : base()
+        internal WrongReturnTypeException(Type typeSource, Type typeDestination) : base()
         {
             _typeSource = typeSource;
             _typeDestination = typeDestination;
@@ -52,5 +53,8 @@ namespace HookManager.Exceptions
                 return _typeDestination;
             }
         }
+
+        /// <inheritdoc/>
+        protected WrongReturnTypeException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

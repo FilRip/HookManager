@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
+using HookManager.Exceptions;
 using HookManager.Helpers;
 
 namespace HookManager.Modeles
@@ -14,9 +15,8 @@ namespace HookManager.Modeles
 
         internal static void ChargeOpCodes()
         {
-            if (_listeOpCodes != null)
-                _listeOpCodes.Clear();
-            _listeOpCodes = new();
+            _listeOpCodes?.Clear();
+            _listeOpCodes = [];
             foreach (FieldInfo fi in typeof(OpCodes).GetFields(BindingFlags.Static | BindingFlags.Public).Where(fi => fi.FieldType == typeof(OpCode)))
             {
                 _listeOpCodes.Add((OpCode)fi.GetValue(null));
@@ -52,8 +52,10 @@ namespace HookManager.Modeles
         internal static ILCommande LireInstruction(this byte[] listeOctets, ref int offset, MethodBase methodeDOrigine = null)
         {
             ILCommande cmd;
-            cmd = new();
-            cmd.offset = offset;
+            cmd = new()
+            {
+                offset = offset,
+            };
             OpCode commande = RetourneOpCode(listeOctets, ref offset, out byte complement);
             cmd.CodeIL = commande;
             cmd.ComplementCodeIL = complement;
@@ -150,17 +152,20 @@ namespace HookManager.Modeles
         internal static List<ILCommande> LireMethodBody(this MethodBase methodeACopier)
         {
             byte[] listeCodes = methodeACopier.GetMethodBody().GetILAsByteArray();
-            List<ILCommande> retour = new();
-            List<int> listeGoto = new();
+            List<ILCommande> retour = [];
+            List<int> listeGoto = [];
             int offset;
             ILCommande cmd;
             int numLabel = 0;
+#pragma warning disable S127 // "for" loop stop conditions should be invariant
             for (offset = 0; offset <= listeCodes.Length; offset++)
             {
                 if (offset > 0)
                     offset--;
-                cmd = new();
-                cmd.offset = offset;
+                cmd = new()
+                {
+                    offset = offset,
+                };
                 OpCode commande = RetourneOpCode(listeCodes, ref offset, out byte complement);
                 cmd.CodeIL = commande;
                 cmd.ComplementCodeIL = complement;
@@ -254,6 +259,7 @@ namespace HookManager.Modeles
                 }
                 retour.Add(cmd);
             }
+#pragma warning restore S127 // "for" loop stop conditions should be invariant
 
             // 2nd passe pour les try/catch
             ILCommande finCatch;
@@ -266,22 +272,23 @@ namespace HookManager.Modeles
                     switch (tryCatch.Flags)
                     {
                         case ExceptionHandlingClauseOptions.Clause:
-                            retour.RetourneCommande(tryCatch.TryOffset).debutTry = true;
-                            ILCommande blockCatch = retour.RetourneCommande(tryCatch.HandlerOffset);
+                            retour.ReturnCommand(tryCatch.TryOffset).debutTry = true;
+                            ILCommande blockCatch = retour.ReturnCommand(tryCatch.HandlerOffset);
                             if (retour[retour.IndexOf(blockCatch) - 1].CodeIL == OpCodes.Leave || retour[retour.IndexOf(blockCatch) - 1].CodeIL == OpCodes.Leave_S)
-                                retour.Remove(retour[retour.IndexOf(blockCatch) - 1]); blockCatch.debutCatch = true;
+                                retour.Remove(retour[retour.IndexOf(blockCatch) - 1]);
+                            blockCatch.debutCatch = true;
                             blockCatch.exceptionCatch = tryCatch.CatchType;
-                            finCatch = retour.RetourneCommande(tryCatch.HandlerOffset + tryCatch.HandlerLength);
+                            finCatch = retour.ReturnCommand(tryCatch.HandlerOffset + tryCatch.HandlerLength);
                             finCatch.finBlock = true;
                             retour.Remove(retour[retour.IndexOf(finCatch) - 1]);
                             break;
                         case ExceptionHandlingClauseOptions.Finally:
                             ExceptionHandlingClause tryPrecedent = methodeACopier.GetMethodBody().ExceptionHandlingClauses[i - 1];
-                            finCatch = retour.RetourneCommande(tryPrecedent.HandlerOffset + tryPrecedent.HandlerLength);
+                            finCatch = retour.ReturnCommand(tryPrecedent.HandlerOffset + tryPrecedent.HandlerLength);
                             finCatch.finBlock = false;
                             retour[retour.IndexOf(finCatch) + 1].debutFinally = true;
                             retour.Remove(finCatch);
-                            finCatch = retour.RetourneCommande(tryCatch.HandlerOffset + tryCatch.HandlerLength);
+                            finCatch = retour.ReturnCommand(tryCatch.HandlerOffset + tryCatch.HandlerLength);
                             finCatch = retour[retour.IndexOf(finCatch) - 1];
                             finCatch.finBlock = true;
                             break;
@@ -289,7 +296,7 @@ namespace HookManager.Modeles
                 }
                 catch (Exception)
                 {
-                    throw new Exception("Erreur pendant la recherche du block try/catch (" + tryCatch.ToString() + ")");
+                    throw new CommonHookManagerException("Erreur pendant la recherche du block try/catch (" + tryCatch.ToString() + ")");
                 }
             }
 
@@ -299,12 +306,12 @@ namespace HookManager.Modeles
                 // Cas particulier Operand inlineSwitch
                 if (instruction.Param is int[] tableau)
                 {
-                    List<Label> listeLabels = new();
+                    List<Label> listeLabels = [];
                     for (int i = 0; i < tableau.Length; i++)
                     {
-                        cmd = retour.RetourneCommande(tableau[i]);
+                        cmd = retour.ReturnCommand(tableau[i]);
                         if (cmd == null)
-                            throw new Exception("Un label n'a pas été trouvé");
+                            throw new CommonHookManagerException("Un label n'a pas été trouvé");
                         else
                             listeLabels.Add(cmd.marqueLabel);
                     }
@@ -313,9 +320,9 @@ namespace HookManager.Modeles
                 // Cas classique (if par exemple)
                 else if (instruction.CodeIL.OperandType == OperandType.ShortInlineBrTarget || instruction.CodeIL.OperandType == OperandType.InlineBrTarget)
                 {
-                    ILCommande cmdDestination = retour.RetourneCommande(int.Parse(instruction.Param.ToString()));
+                    ILCommande cmdDestination = retour.ReturnCommand(int.Parse(instruction.Param.ToString()));
                     if (cmdDestination == null)
-                        throw new Exception("Un label n'a pas été trouvé");
+                        throw new CommonHookManagerException("Un label n'a pas été trouvé");
                     else
                     {
                         if (!cmdDestination.debutLabel)
@@ -345,7 +352,7 @@ namespace HookManager.Modeles
 
         internal void MarqueDebutLabel(int numLabel)
         {
-            marqueLabel = (Label)typeof(Label).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0].Invoke(new object[] { numLabel });
+            marqueLabel = (Label)typeof(Label).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0].Invoke([numLabel]);
             debutLabel = true;
         }
 

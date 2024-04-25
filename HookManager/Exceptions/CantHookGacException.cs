@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -7,9 +8,9 @@ namespace HookManager.Exceptions
     /// Il faut utiliser le "remplaceur de GAC" et non le "remplaceur" managé
     /// </summary>
     [Serializable()]
-    public class CantHookGAC : HookManagerException
+    public class CantHookGacException : HookManagerException
     {
-        internal CantHookGAC() : base()
+        internal CantHookGacException() : base()
         {
         }
 
@@ -21,5 +22,8 @@ namespace HookManager.Exceptions
                 return "Il n'est pas possible de substituer une méthode d'une classe inclus dans le GAC (GlobalAssemblyCache)" + Environment.NewLine + "Utilisez HookPool.getInstance().AjouterGACHook() pour substituer des méthodes du GAC";
             }
         }
+
+        /// <inheritdoc/>
+        protected CantHookGacException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

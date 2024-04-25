@@ -3,7 +3,7 @@
 namespace HookManager.Attributes
 {
     /// <summary>
-    /// Attribut pour remplacer, toutes ou partie, des méthodes de ce type de manière automatique (au démarrage, si <see cref="HookPool.InitialiseTousHookParAttribut(bool)"/> est appelée)
+    /// Attribut pour remplacer, toutes ou partie, des méthodes de ce type de manière automatique (au démarrage, si <see cref="HookPool.InitializeAllAttributeHook(bool)"/> est appelée)
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     public class HookClasseAttribute : HookManagerAttribute
@@ -11,10 +11,16 @@ namespace HookManager.Attributes
         /// <summary>
         /// Filtre les méthodes à remplacer
         /// </summary>
-        public System.Reflection.BindingFlags filtreMethode;
+        public System.Reflection.BindingFlags FiltreMethode { get; set; }
+
         /// <summary>
-        /// Filtre les méthodes à remplacer qui commence ou finit par le/les caractère(s) spécifié(s)
+        /// Filtre les méthodes à remplacer qui commence par le/les caractère(s) spécifié(s)
         /// </summary>
-        public string prefixNomMethode, suffixeNomMethode;
+        public string PrefixNomMethode { get; set; }
+
+        /// <summary>
+        /// Filtre les méthodes à remplacer qui termine par le/les caractère(s) spécifié(s)
+        /// </summary>
+        public string SuffixeNomMethode { get; set; }
     }
 }

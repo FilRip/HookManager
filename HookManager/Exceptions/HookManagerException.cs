@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -8,8 +9,13 @@ namespace HookManager.Exceptions
     [Serializable()]
     public abstract class HookManagerException : Exception
     {
-        internal HookManagerException() : base()
-        {
-        }
+        /// <inheritdoc/>
+        protected HookManagerException() : base() { }
+
+        /// <inheritdoc/>
+        protected HookManagerException(string message) : base(message) { }
+
+        /// <inheritdoc/>
+        protected HookManagerException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

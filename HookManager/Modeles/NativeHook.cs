@@ -17,7 +17,6 @@ namespace HookManager.Modeles
 
         private bool _isEnabled;
         private readonly object _threadSafe = new();
-        private byte[] FromPtrData;
         private bool _firstRedirect = true;
 
         #endregion
@@ -46,10 +45,10 @@ namespace HookManager.Modeles
         /// <summary>
         ///     The module cache.
         /// </summary>
-        private readonly Dictionary<string, IntPtr> _modules = new();
+        private readonly Dictionary<string, IntPtr> _modules = [];
 
         /// <summary>
-        ///     The function pointer data for the redirect, created after <see cref="Remove" /> is called.
+        ///     The function pointer data for the redirect, created after <see cref="Disable" /> is called.
         /// </summary>
         private byte[] _existingPtrData;
 
@@ -84,7 +83,7 @@ namespace HookManager.Modeles
         /// <summary>
         /// Active la substitution de la méthode Native (à faire qu'une fois, la toute première fois)
         /// </summary>
-        public void Apply()
+        public void Enable()
         {
             lock (_threadSafe)
             {
@@ -102,10 +101,7 @@ namespace HookManager.Modeles
             }
         }
 
-        /// <summary>
-        /// Réactive la substitution de la méthode Native (à faire toutes les autres fois, sauf la 1ère fois ou il faut utiliser la méthode "Apply()"
-        /// </summary>
-        public void ReApply()
+        private void ReApply()
         {
             lock (_threadSafe)
             {
@@ -113,13 +109,13 @@ namespace HookManager.Modeles
                 {
                     var fromPtr = FromMethod.Address;
 
-                    WinAPI.VirtualProtect(fromPtr, (IntPtr)5, 0x40, out uint x);
+                    WinApi.VirtualProtect(fromPtr, (IntPtr)5, 0x40, out uint x);
 
                     for (var i = 0; i < _existingPtrData.Length; i++)
                         // Instead write back the contents from the existing ptr data first applied.
                         Marshal.WriteByte(fromPtr, i, _existingPtrData[i]);
 
-                    WinAPI.VirtualProtect(fromPtr, (IntPtr)5, x, out _);
+                    WinApi.VirtualProtect(fromPtr, (IntPtr)5, x, out _);
                     _isEnabled = true;
                 }
             }
@@ -128,7 +124,7 @@ namespace HookManager.Modeles
         /// <summary>
         /// Désactive la substitution de la méthode Native
         /// </summary>
-        public void Remove()
+        public void Disable()
         {
             lock (_threadSafe)
             {
@@ -137,7 +133,7 @@ namespace HookManager.Modeles
                     var fromPtr = FromMethod.Address;
 
                     // Unlock memory for readwrite
-                    WinAPI.VirtualProtect(fromPtr, (IntPtr)5, 0x40, out uint x);
+                    WinApi.VirtualProtect(fromPtr, (IntPtr)5, 0x40, out uint x);
 
                     _existingPtrData = new byte[_originalPtrData.Length];
 
@@ -149,7 +145,7 @@ namespace HookManager.Modeles
                         Marshal.WriteByte(fromPtr, i, _originalPtrData[i]);
                     }
 
-                    WinAPI.VirtualProtect(fromPtr, (IntPtr)5, x, out _);
+                    WinApi.VirtualProtect(fromPtr, (IntPtr)5, x, out _);
                     _isEnabled = false;
                 }
             }
@@ -162,13 +158,13 @@ namespace HookManager.Modeles
         /// <typeparam name="V">Le type de retour</typeparam>
         /// <param name="args">Paramètres pour la méthode native d'origine, si elle en a</param>
         /// <remarks>Appeler la méthode "parente" native ne supporte PAS le multithread</remarks>
-        public V Call<T, V>(params object[] args)
+        public V CallOriginalMethod<T, V>(params object[] args)
             where T : class
             where V : class
         {
             lock (_threadSafe)
             {
-                Remove();
+                Disable();
                 var ret = Marshal.GetDelegateForFunctionPointer(FromMethod.Address, typeof(T)).DynamicInvoke(args) as V;
                 ReApply();
                 return ret;
@@ -181,8 +177,8 @@ namespace HookManager.Modeles
 
         private IntPtr GetAddress(string module, string method)
         {
-            if (!_modules.ContainsKey(module)) _modules.Add(module, WinAPI.LoadLibraryEx(module, IntPtr.Zero, 0));
-            return WinAPI.GetProcAddress(_modules[module], method);
+            if (!_modules.ContainsKey(module)) _modules.Add(module, WinApi.LoadLibraryEx(module, IntPtr.Zero, 0));
+            return WinApi.GetProcAddress(_modules[module], method);
         }
 
         private void Redirect(NativeMethod from, RuntimeMethodHandle to)
@@ -192,10 +188,10 @@ namespace HookManager.Modeles
             var fromPtr = from.Address;
             var toPtr = to.GetFunctionPointer();
 
-            FromPtrData = new byte[32];
+            byte[] FromPtrData = new byte[32];
             Marshal.Copy(fromPtr, FromPtrData, 0, 32);
 
-            WinAPI.VirtualProtect(fromPtr, (IntPtr)5, 0x40, out uint x);
+            WinApi.VirtualProtect(fromPtr, (IntPtr)5, 0x40, out uint x);
 
             if (IntPtr.Size == 8)
             {
@@ -227,7 +223,7 @@ namespace HookManager.Modeles
                 Marshal.WriteByte(fromPtr, 5, 0xc3);
             }
 
-            WinAPI.VirtualProtect(fromPtr, (IntPtr)5, x, out _);
+            WinApi.VirtualProtect(fromPtr, (IntPtr)5, x, out _);
         }
 
         #endregion
@@ -236,39 +232,33 @@ namespace HookManager.Modeles
     /// <summary>
     /// Classe représentant la méthode native d'origine
     /// </summary>
-    public class NativeMethod
+    /// <remarks>
+    /// Objet représentant la méthode Native à substituer
+    /// </remarks>
+    /// <param name="method">Nom de la méthode</param>
+    /// <param name="module">Nom du module (avec son extension)</param>
+    public class NativeMethod(string method, string module)
     {
         #region Fields
 
         /// <summary>
         /// Le pointeur (adresse mémoire) de la méthode Native
         /// </summary>
-        public IntPtr Address;
+        public IntPtr Address { get; set; }
 
         /// <summary>
         /// Le nom de la méthode
         /// </summary>
-        public string Method;
+        public string Method { get; set; } = method;
 
         /// <summary>
         /// Le nom du module (avec son extension)
         /// </summary>
-        public string ModuleName;
+        public string ModuleName { get; set; } = module;
 
         #endregion
 
         #region Constructors
-
-        /// <summary>
-        /// Objet représentant la méthode Native à substituer
-        /// </summary>
-        /// <param name="method">Nom de la méthode</param>
-        /// <param name="module">Nom du module (avec son extension)</param>
-        public NativeMethod(string method, string module)
-        {
-            ModuleName = module;
-            Method = method;
-        }
 
         #endregion
 

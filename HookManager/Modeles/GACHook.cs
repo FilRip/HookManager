@@ -10,15 +10,13 @@ using HookManager.Helpers;
 namespace HookManager.Modeles
 {
     /// <summary>
-    /// Classe gérant le remplacement d'une méthode managée d'une librairie du GAC (Global Assembly Cache)<br/>
-    /// Exemple : toutes méthodes du namespace "System" (du net framework)
+    /// Class manage one replaced method in Assembly in GAC<br/>
     /// </summary>
-    /// <remarks>Appeler la méthode "parente" ne supporte PAS le multithread</remarks>
-    public sealed class GACHook
+    /// <remarks>Call the original method does not support multithread</remarks>
+    public sealed class GacHook
     {
         #region Private properties
 
-        private byte[] FromPtrData;
         private readonly object _threadSafe = new();
 
         #endregion
@@ -26,17 +24,17 @@ namespace HookManager.Modeles
         #region Public Properties
 
         /// <summary>
-        /// La méthode originale du GAC
+        /// The original method
         /// </summary>
         public MethodInfo FromMethod { get; }
 
         /// <summary>
-        /// La méthode servant de substitution
+        /// The method replacement
         /// </summary>
         public MethodInfo ToMethod { get; }
 
         /// <summary>
-        /// Indique si la substitution est active ou non
+        /// Does the hook is enabled or not
         /// </summary>
         public bool IsEnabled { get; set; }
 
@@ -57,25 +55,25 @@ namespace HookManager.Modeles
         #region Constructors
 
         /// <summary>
-        /// Initialise une substitution d'une méthode d'un assembly du GAC
+        /// Class manage one replaced method in Assembly in GAC<br/>
         /// </summary>
-        /// <param name="from">La méthode du GAC à substituer</param>
-        /// <param name="to">La méthode a appeler lorsque l'on appel la méthode du GAC</param>
-        internal GACHook(MethodInfo from, MethodInfo to)
+        /// <param name="from">The original method, in GAC</param>
+        /// <param name="to">The new method to call instead of the one in GAC</param>
+        internal GacHook(MethodInfo from, MethodInfo to)
         {
             if (!from.IsStatic)
             {
                 if (to.GetParameters().Length == 0)
-                    throw new MissingDefaultArgument(to.Name, true);
+                    throw new MissingDefaultArgumentException(to.Name, true);
 
                 if ((to.GetParameters()[0].ParameterType != typeof(object)) && (to.GetParameters()[0].ParameterType != from.DeclaringType))
-                    throw new MissingDefaultArgument(to.Name, true);
+                    throw new MissingDefaultArgumentException(to.Name, true);
 
                 if (from.GetParameters().Length > to.GetParameters().Length - 1)
-                    throw new NotEnoughArgument(from.GetParameters().Length, to.GetParameters().Length - 1);
+                    throw new NotEnoughArgumentException(from.GetParameters().Length, to.GetParameters().Length - 1);
             }
             if (!to.IsStatic)
-                throw new MethodDestinationNotStatic();
+                throw new MethodDestinationNotStaticException();
 
             FromMethod = from;
             ToMethod = to;
@@ -86,9 +84,9 @@ namespace HookManager.Modeles
         #region Public Methods
 
         /// <summary>
-        /// Applique la substitution. A appeler que la 1ère fois
+        /// Enable this hook
         /// </summary>
-        public void Apply()
+        public void Enable()
         {
             lock (_threadSafe)
             {
@@ -106,46 +104,41 @@ namespace HookManager.Modeles
             }
         }
 
-        /// <summary>
-        /// Active la substitution. La méthode ne sert que pour toutes les autres fois, sauf la 1ère fois où il faut appeler la méthode "Apply()"
-        /// </summary>
-        public void ReApply()
+        private void ReApply()
         {
             lock (_threadSafe)
             {
                 if (!IsEnabled)
                 {
                     if (_existingPtrData == null)
-                        throw new NullReferenceException(
-                            "ExistingPtrData was null. Call ManagedHook.Remove() to populate the data.");
+                        throw new CommonHookManagerException("ExistingPtrData was null. Call ManagedHook.Remove() to populate the data.");
 
-                    WinAPI.VirtualProtect(_fromPtr, (IntPtr)5, 0x40, out uint x);
+                    WinApi.VirtualProtect(_fromPtr, (IntPtr)5, 0x40, out uint x);
 
                     for (var i = 0; i < _existingPtrData.Length; i++)
                         // Instead write back the contents from the existing ptr data first applied.
                         Marshal.WriteByte(_fromPtr, i, _existingPtrData[i]);
 
-                    WinAPI.VirtualProtect(_fromPtr, (IntPtr)5, x, out _);
+                    WinApi.VirtualProtect(_fromPtr, (IntPtr)5, x, out _);
                     IsEnabled = true;
                 }
             }
         }
 
         /// <summary>
-        /// Désactive la substitution de la méthode GAC vers la méthode de substitution
+        /// Disable this hook
         /// </summary>
-        public void Remove()
+        public void Disable()
         {
             lock (_threadSafe)
             {
                 if (IsEnabled)
                 {
                     if (_originalPtrData == null)
-                        throw new NullReferenceException(
-                            "OriginalPtrData was null. Call ManagedHook.Apply() to populate the data.");
+                        throw new CommonHookManagerException("OriginalPtrData was null. Call ManagedHook.Apply() to populate the data.");
 
                     // Unlock memory for readwrite
-                    WinAPI.VirtualProtect(_fromPtr, (IntPtr)5, 0x40, out uint x);
+                    WinApi.VirtualProtect(_fromPtr, (IntPtr)5, 0x40, out uint x);
 
                     _existingPtrData = new byte[_originalPtrData.Length];
 
@@ -157,24 +150,24 @@ namespace HookManager.Modeles
                         Marshal.WriteByte(_fromPtr, i, _originalPtrData[i]);
                     }
 
-                    WinAPI.VirtualProtect(_fromPtr, (IntPtr)5, x, out _);
+                    WinApi.VirtualProtect(_fromPtr, (IntPtr)5, x, out _);
                     IsEnabled = false;
                 }
             }
         }
 
         /// <summary>
-        /// Appel la méthode originale du GAC
+        /// Call the original (replaced) method in GAC
         /// </summary>
-        /// <typeparam name="T">Type retourné par la méthode, si ce n'est pas une void</typeparam>
-        /// <param name="instance">Instance de l'objet sur lequel appeler la méthode d'origine (null si méthode static)</param>
-        /// <param name="args">Paramètres de la méthode d'origine, si elle en a</param>
-        /// <remarks>Appeler la méthode "parente" du GAC ne supporte PAS le multithread</remarks>
-        public T Call<T>(object instance, params object[] args) where T : class
+        /// <typeparam name="T">Return type by the method, if not a void</typeparam>
+        /// <param name="instance">Instance of current object or null if static method</param>
+        /// <param name="args">Parameters of original method, if there is/are</param>
+        /// <remarks>Call the original method does not support multithread</remarks>
+        public T CallOriginalMethod<T>(object instance, params object[] args) where T : class
         {
             lock (_threadSafe)
             {
-                Remove();
+                Disable();
                 try
                 {
                     if (args.Length > FromMethod.GetParameters().Length)
@@ -185,7 +178,7 @@ namespace HookManager.Modeles
                 }
                 catch (Exception)
                 {
-                    if ((Debugger.IsAttached) && (HookPool.GetInstance().ModeDebugInterne)) Debugger.Break();
+                    if ((Debugger.IsAttached) && (HookPool.GetInstance().ModeInternalDebug)) Debugger.Break();
                 }
 
                 ReApply();
@@ -206,10 +199,10 @@ namespace HookManager.Modeles
             if (_fromPtr == default) _fromPtr = from.GetFunctionPointer();
             if (_toPtr == default) _toPtr = to.GetFunctionPointer();
 
-            FromPtrData = new byte[32];
+            byte[] FromPtrData = new byte[32];
             Marshal.Copy(_fromPtr, FromPtrData, 0, 32);
 
-            WinAPI.VirtualProtect(_fromPtr, (IntPtr)5, 0x40, out uint x);
+            WinApi.VirtualProtect(_fromPtr, (IntPtr)5, 0x40, out uint x);
 
             if (IntPtr.Size == 8)
             {
@@ -217,7 +210,6 @@ namespace HookManager.Modeles
 
                 _originalPtrData = new byte[13];
 
-                // 13
                 Marshal.Copy(_fromPtr, _originalPtrData, 0, 13);
 
                 Marshal.WriteByte(_fromPtr, 0, 0x49);
@@ -236,7 +228,6 @@ namespace HookManager.Modeles
 
                 _originalPtrData = new byte[6];
 
-                // 6
                 Marshal.Copy(_fromPtr, _originalPtrData, 0, 6);
 
                 Marshal.WriteByte(_fromPtr, 0, 0xe9);
@@ -244,7 +235,7 @@ namespace HookManager.Modeles
                 Marshal.WriteByte(_fromPtr, 5, 0xc3);
             }
 
-            WinAPI.VirtualProtect(_fromPtr, (IntPtr)5, x, out _);
+            WinApi.VirtualProtect(_fromPtr, (IntPtr)5, x, out _);
         }
 
         #endregion

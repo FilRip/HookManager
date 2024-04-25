@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -6,14 +7,14 @@ namespace HookManager.Exceptions
     /// Le nom de la méthode n'est pas correct. Spécifiez le type (et l'espace de nom au besoin)
     /// </summary>
     [Serializable()]
-    public class NoTypeInName : HookManagerException
+    public class NoTypeInNameException : HookManagerException
     {
         private readonly string _nomMethode;
 
         /// <summary>
         /// Le nom de la méthode n'est pas correct. Spécifiez le type (et l'espace de nom au besoin)
         /// </summary>
-        internal NoTypeInName(string nomMethode) : base()
+        internal NoTypeInNameException(string nomMethode) : base()
         {
             _nomMethode = nomMethode;
         }
@@ -37,5 +38,8 @@ namespace HookManager.Exceptions
                 return $"Le nom de l'élément {_nomMethode} n'a pas de type, ou le type n'a pas été trouvé. Vous devez spécifier comme nom : " + Environment.NewLine + "Type.NomElement" + Environment.NewLine + "(séparé par un point) et l'espace de nom, au besoin, exemple : " + Environment.NewLine + "Namespace.Type.NomElement";
             }
         }
+
+        /// <inheritdoc/>
+        protected NoTypeInNameException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

@@ -3,7 +3,7 @@
 namespace HookManager.Attributes
 {
     /// <summary>
-    /// Attributs pour remplacer le getter et/ou le setter d'une propriété par une autre automatiquement (au démarrage, si <see cref="HookPool.InitialiseTousHookParAttribut(bool)"/> est appelée)
+    /// Attributs pour remplacer le getter et/ou le setter d'une propriété par une autre automatiquement (au démarrage, si <see cref="HookPool.InitializeAllAttributeHook(bool)"/> est appelée)
     /// </summary>
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class HookProprieteAttribute : HookManagerAttribute
@@ -11,10 +11,10 @@ namespace HookManager.Attributes
         /// <summary>
         /// Nom de la méthode pour le get de cette propriété
         /// </summary>
-        public string GetMethode;
+        public string GetMethode { get; set; }
         /// <summary>
         /// Nom de la méthode pour le set de cette propriété
         /// </summary>
-        public string SetMethode;
+        public string SetMethode { get; set; }
     }
 }

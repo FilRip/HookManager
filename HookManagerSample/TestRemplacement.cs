@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace HookManagerSample
 {
+#pragma warning disable S1118 // Utility classes should not have public constructors
     public class TestRemplacement
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -11,4 +12,5 @@ namespace HookManagerSample
             Console.WriteLine("Nouvelle méthode, classe de base : " + monThis.ToString());
         }
     }
+#pragma warning restore S1118 // Utility classes should not have public constructors
 }

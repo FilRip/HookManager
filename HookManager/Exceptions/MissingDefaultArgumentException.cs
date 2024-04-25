@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -7,7 +8,7 @@ namespace HookManager.Exceptions
     /// Si la méthode remplacée est static, il n'y a pas besoin du premier paramètre (type de l'objet remplacé) puis ce qu'une static n'a pas d'instance d'objet lié.
     /// </summary>
     [Serializable()]
-    public class MissingDefaultArgument : HookManagerException
+    public class MissingDefaultArgumentException : HookManagerException
     {
         private readonly string _nomMethode;
         private readonly bool _gac;
@@ -18,7 +19,7 @@ namespace HookManager.Exceptions
         /// </summary>
         /// <param name="nomMethode">Nom de la méthode de remplacement</param>
         /// <param name="GAC">Est-ce le remplacement d'une méthode d'un type dans le GAC (Global Assembly Cache)</param>
-        internal MissingDefaultArgument(string nomMethode, bool GAC = false) : base()
+        internal MissingDefaultArgumentException(string nomMethode, bool GAC = false) : base()
         {
             _nomMethode = nomMethode;
             _gac = GAC;
@@ -55,5 +56,8 @@ namespace HookManager.Exceptions
                 return _gac;
             }
         }
+
+        /// <inheritdoc/>
+        protected MissingDefaultArgumentException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

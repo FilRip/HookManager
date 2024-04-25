@@ -17,7 +17,7 @@ namespace HookManager.Helpers
         /// <param name="ptr">Pointeur vers la chaine de caractères</param>
         public static string ReadASCIINullTerminatedString(this IntPtr ptr)
         {
-            List<byte> strBytes = new();
+            List<byte> strBytes = [];
             int count = 0;
             byte cur;
 
@@ -47,7 +47,7 @@ namespace HookManager.Helpers
         /// <param name="ptr">Pointeur vers la chaine de caractères</param>
         public static string ReadUnicodeNullTerminatedString(this IntPtr ptr)
         {
-            List<byte> strBytes = new();
+            List<byte> strBytes = [];
             int count = 0;
             byte cur;
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -6,9 +7,9 @@ namespace HookManager.Exceptions
     /// Ne pas substituer cet assembly (gérant la substitution)
     /// </summary>
     [Serializable()]
-    public class DoNotHookMyLib : HookManagerException
+    public class DoNotHookMyLibException : HookManagerException
     {
-        internal DoNotHookMyLib() : base()
+        internal DoNotHookMyLibException() : base()
         {
         }
 
@@ -20,5 +21,8 @@ namespace HookManager.Exceptions
                 return "La substitution d'élément de cette librairie est interdit, fortement déconseillé car risque d'instabilité du système";
             }
         }
+
+        /// <inheritdoc/>
+        protected DoNotHookMyLibException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

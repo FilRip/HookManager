@@ -10,10 +10,10 @@ namespace HookManager.Attributes
         /// <summary>
         /// Type contenant la méthode de remplacement
         /// </summary>
-        public Type Classe;
+        public Type Classe { get; set; }
         /// <summary>
-        /// Activer (ou non) automatiquement (au démarrage, si <see cref="HookPool.InitialiseTousHookParAttribut(bool)"/> est appelée)
+        /// Activer (ou non) automatiquement (au démarrage, si <see cref="HookPool.InitializeAllAttributeHook(bool)"/> est appelée)
         /// </summary>
-        public bool AutoActiver = true;
+        public bool AutoEnabled { get; set; } = true;
     }
 }

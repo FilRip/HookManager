@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace HookManager.Exceptions
 {
@@ -6,9 +7,9 @@ namespace HookManager.Exceptions
     /// Erreur, la "nouvelle" méthode de remplacement doit être static<br/>
     /// </summary>
     [Serializable()]
-    public class MethodDestinationNotStatic : HookManagerException
+    public class MethodDestinationNotStaticException : HookManagerException
     {
-        internal MethodDestinationNotStatic() : base()
+        internal MethodDestinationNotStaticException() : base()
         {
         }
 
@@ -20,5 +21,8 @@ namespace HookManager.Exceptions
                 return "La méthode destination doit être déclarée static (shared en VBNET)";
             }
         }
+
+        /// <inheritdoc/>
+        protected MethodDestinationNotStaticException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }
