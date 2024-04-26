@@ -28,7 +28,7 @@ namespace HookManager.Exceptions
         {
             get
             {
-                return $"Le type de retour de la méthode à substituer n'est pas le même, ou est incompatible, avec la méthode servant de substitution. Type de la méthode source : {_typeSource}, type de la méthode destination : {_typeDestination}";
+                return $"The return type of the method to replace is not the same, or can't be cast, with the return type of the replacement method. Return type of method to replace : {_typeSource}, return type of the new method : {_typeDestination}";
             }
         }
 

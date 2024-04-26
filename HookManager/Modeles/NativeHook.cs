@@ -9,7 +9,7 @@ using HookManager.Helpers;
 namespace HookManager.Modeles
 {
     /// <summary>
-    /// Classe gérant le remplacement d'une méthode native (API Windows)
+    /// Class manage one hook on native method (api Windows)
     /// </summary>
     public sealed class NativeHook
     {
@@ -62,10 +62,10 @@ namespace HookManager.Modeles
         #region Constructors
 
         /// <summary>
-        /// Initialise une substitution d'une méthode native vers une méthode managée
+        /// Class manage one hook on native method (api Windows)
         /// </summary>
-        /// <param name="from">Objet NativeMethod contenant le nom du module et le nom de la méthode native à substituer</param>
-        /// <param name="to">Méthode managée qui remplacera la méthode Native</param>
+        /// <param name="from">Instance of <see cref="NativeMethod"/> contains name of library and name of method to replace</param>
+        /// <param name="to">Managed method of replacement</param>
         internal NativeHook(NativeMethod from, MethodInfo to)
         {
             FromMethod = from;
@@ -81,7 +81,7 @@ namespace HookManager.Modeles
         #region Public Methods
 
         /// <summary>
-        /// Active la substitution de la méthode Native (à faire qu'une fois, la toute première fois)
+        /// Enable the replacement
         /// </summary>
         public void Enable()
         {
@@ -122,7 +122,7 @@ namespace HookManager.Modeles
         }
 
         /// <summary>
-        /// Désactive la substitution de la méthode Native
+        /// Disable the replacement
         /// </summary>
         public void Disable()
         {
@@ -152,12 +152,12 @@ namespace HookManager.Modeles
         }
 
         /// <summary>
-        /// Appel la méthode Native originale (avant substitution)
+        /// Call the original method (not the managed one but the replaced)
         /// </summary>
-        /// <typeparam name="T">Delegué représentant la signature de la méthode native</typeparam>
-        /// <typeparam name="V">Le type de retour</typeparam>
-        /// <param name="args">Paramètres pour la méthode native d'origine, si elle en a</param>
-        /// <remarks>Appeler la méthode "parente" native ne supporte PAS le multithread</remarks>
+        /// <typeparam name="T">Delegate for the original method</typeparam>
+        /// <typeparam name="V">Type of return of the original method</typeparam>
+        /// <param name="args">Parameters for the original method</param>
+        /// <remarks>Call the original native method does not support multithread</remarks>
         public V CallOriginalMethod<T, V>(params object[] args)
             where T : class
             where V : class
@@ -230,35 +230,28 @@ namespace HookManager.Modeles
     }
 
     /// <summary>
-    /// Classe représentant la méthode native d'origine
+    /// Class with all informations about the native method to replace
     /// </summary>
-    /// <remarks>
-    /// Objet représentant la méthode Native à substituer
-    /// </remarks>
-    /// <param name="method">Nom de la méthode</param>
-    /// <param name="module">Nom du module (avec son extension)</param>
+    /// <param name="method">Name of the native method</param>
+    /// <param name="module">Name of the library that contains the native method (with extension)</param>
     public class NativeMethod(string method, string module)
     {
         #region Fields
 
         /// <summary>
-        /// Le pointeur (adresse mémoire) de la méthode Native
+        /// The pointer to the original native method
         /// </summary>
         public IntPtr Address { get; set; }
 
         /// <summary>
-        /// Le nom de la méthode
+        /// Name of the native method
         /// </summary>
         public string Method { get; set; } = method;
 
         /// <summary>
-        /// Le nom du module (avec son extension)
+        /// Name of the library that contains the native method (with extension)
         /// </summary>
         public string ModuleName { get; set; } = module;
-
-        #endregion
-
-        #region Constructors
 
         #endregion
 

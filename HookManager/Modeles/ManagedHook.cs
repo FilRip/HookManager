@@ -316,7 +316,6 @@ namespace HookManager.Modeles
                 {
                     if (IsConstructor)
                     {
-
                         Marshal.WriteByte(_constructorPtr, _opOriginal);
                         Marshal.WriteInt32(_constructorPtr + 1, _ptrOriginal);
                     }
