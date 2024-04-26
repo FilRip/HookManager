@@ -1,0 +1,11 @@
+C:\Code\Tests\HookManagerCore\ILPack\obj\Debug\net8.0\Lokad.ILPack.GeneratedMSBuildEditorConfig.editorconfig
+C:\Code\Tests\HookManagerCore\ILPack\obj\Debug\net8.0\Lokad.ILPack.AssemblyInfoInputs.cache
+C:\Code\Tests\HookManagerCore\ILPack\obj\Debug\net8.0\Lokad.ILPack.AssemblyInfo.cs
+C:\Code\Tests\HookManagerCore\ILPack\obj\Debug\net8.0\Lokad.ILPack.csproj.CoreCompileInputs.cache
+C:\Code\Tests\HookManagerCore\ILPack\bin\Debug\net8.0\Lokad.ILPack.deps.json
+C:\Code\Tests\HookManagerCore\ILPack\bin\Debug\net8.0\Lokad.ILPack.dll
+C:\Code\Tests\HookManagerCore\ILPack\bin\Debug\net8.0\Lokad.ILPack.pdb
+C:\Code\Tests\HookManagerCore\ILPack\obj\Debug\net8.0\Lokad.ILPack.dll
+C:\Code\Tests\HookManagerCore\ILPack\obj\Debug\net8.0\refint\Lokad.ILPack.dll
+C:\Code\Tests\HookManagerCore\ILPack\obj\Debug\net8.0\Lokad.ILPack.pdb
+C:\Code\Tests\HookManagerCore\ILPack\obj\Debug\net8.0\ref\Lokad.ILPack.dll

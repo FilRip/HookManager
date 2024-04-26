@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net8.0</TargetFrameworks>
+		<Product>Harmony</Product>
+		<Company>Andreas Pardeike</Company>
+		<Copyright>Copyright © 2016</Copyright>
+		<Description>A general non-destructive patch library for .NET and Mono modules</Description>
+		<PackageId>Lib.Harmony</PackageId>
+		<PackageId Condition="$(Configuration.EndsWith('Thin'))">Lib.Harmony.Thin</PackageId>
+		<Authors>Andreas Pardeike</Authors>
+		<AssemblyName>Harmony</AssemblyName>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<LogFile>obj/docfx-$(TargetFramework).log</LogFile>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<LangVersion>latest</LangVersion>
+		<Version>$(HarmonyVersion)</Version>
+		<AssemblyVersion>$(HarmonyVersion)</AssemblyVersion>
+		<FileVersion>$(HarmonyVersion)</FileVersion>
+		<PackageVersion>$(HarmonyVersion)$(HarmonyPrerelease)</PackageVersion>
+		<InformationalVersion>$(HarmonyVersion)$(HarmonyPrerelease)</InformationalVersion>
+		<NoWarn>$(NoWarn);SYSLIB0011;NU5131</NoWarn>
+		<Configurations>Debug;Release</Configurations>
+		<IsNET5OrGreater>true</IsNET5OrGreater>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\HarmonyLogo.png" Pack="true" Visible="false" PackagePath="" />
+		<None Include="..\_._" Pack="true" Visible="false" PackagePath="lib/netstandard2.0" Condition="$(Configuration)!='ReleaseRef'" />
+	</ItemGroup>
+
+	<PropertyGroup Condition="$(Configuration.StartsWith('Debug'))">
+		<Optimize>false</Optimize>
+		<DebugType>full</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+		<DefineConstants>DEBUG</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<Optimize>true</Optimize>
+		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+		<CopyDebugSymbolFilesFromPackages>true</CopyDebugSymbolFilesFromPackages>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MonoMod.Core" Version="1.1.0" PrivateAssets="all" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.29" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.NetCore.App.Ref" Version="8.0.0" ExcludeAssets="all" PrivateAssets="all" GeneratePathProperty="true" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="System.Text.Json" Version="8.0.1" />
+	</ItemGroup>
+
+	<Target Name="RemoveFaultyPdb" BeforeTargets="Build">
+		<ItemGroup>
+			<FilesToDelete Include="$(ProjectDir)\$(OutDir)\MonoMod.ILHelpers.pdb" />
+		</ItemGroup>
+		<Delete Files="@(FilesToDelete)" />
+	</Target>
+
+	<Target Name="RemoveExtraDlls" AfterTargets="Pack">
+		<ItemGroup>
+			<ExtraDlls Include="$(MSBuildThisFileDirectory)bin\**\MonoMod.*.*" />
+			<ExtraDlls Include="$(MSBuildThisFileDirectory)bin\**\Mono.*.*" />
+			<ExtraDlls Include="$(MSBuildThisFileDirectory)bin\**\System.*.*" />
+		</ItemGroup>
+		<Delete Files="@(ExtraDlls)" />
+	</Target>
+
+</Project>

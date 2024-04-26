@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "dgSpecHash": "tnFYVZvgvKNmg/+kmxdbCg9e2i0tDquBYO+rWexMyPOoeRy5shI+GYynCV2P3dUq8ynY9Hdvb8SjeqKVPOvyWw==",
+  "success": true,
+  "projectFilePath": "C:\\Code\\Tests\\HookManagerCore\\Harmony\\Harmony.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\TREILLE\\.nuget\\packages\\ilrepack.lib.msbuild.task\\2.0.29\\ilrepack.lib.msbuild.task.2.0.29.nupkg.sha512",
+    "C:\\Users\\TREILLE\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.0\\microsoft.netcore.app.ref.8.0.0.nupkg.sha512",
+    "C:\\Users\\TREILLE\\.nuget\\packages\\mono.cecil\\0.11.5\\mono.cecil.0.11.5.nupkg.sha512",
+    "C:\\Users\\TREILLE\\.nuget\\packages\\monomod.backports\\1.1.0\\monomod.backports.1.1.0.nupkg.sha512",
+    "C:\\Users\\TREILLE\\.nuget\\packages\\monomod.core\\1.1.0\\monomod.core.1.1.0.nupkg.sha512",
+    "C:\\Users\\TREILLE\\.nuget\\packages\\monomod.ilhelpers\\1.0.1\\monomod.ilhelpers.1.0.1.nupkg.sha512",
+    "C:\\Users\\TREILLE\\.nuget\\packages\\monomod.utils\\25.0.4\\monomod.utils.25.0.4.nupkg.sha512",
+    "C:\\Users\\TREILLE\\.nuget\\packages\\system.text.encodings.web\\8.0.0\\system.text.encodings.web.8.0.0.nupkg.sha512",
+    "C:\\Users\\TREILLE\\.nuget\\packages\\system.text.json\\8.0.1\\system.text.json.8.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}

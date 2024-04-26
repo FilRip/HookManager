@@ -1,0 +1,88 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Code\\Tests\\HookManagerCore\\ILPack\\Lokad.ILPack.csproj": {}
+  },
+  "projects": {
+    "C:\\Code\\Tests\\HookManagerCore\\ILPack\\Lokad.ILPack.csproj": {
+      "version": "0.2.0",
+      "restore": {
+        "projectUniqueName": "C:\\Code\\Tests\\HookManagerCore\\ILPack\\Lokad.ILPack.csproj",
+        "projectName": "Lokad.ILPack",
+        "projectPath": "C:\\Code\\Tests\\HookManagerCore\\ILPack\\Lokad.ILPack.csproj",
+        "packagesPath": "C:\\Users\\TREILLE\\.nuget\\packages\\",
+        "outputPath": "C:\\Code\\Tests\\HookManagerCore\\ILPack\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\TREILLE\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "\\\\NT01e\\p2000\\NuGet\\Feed": {},
+          "https://api.nuget.org/v3/index.json": {},
+          "https://pkgs.dev.azure.com/prod-aprr/39e8bdcd-dc47-4adc-b567-426dfe499176/_packaging/SLP-Feed-Nuget/nuget/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "System.Reflection.Emit": {
+              "target": "Package",
+              "version": "[4.7.0, )"
+            },
+            "System.Reflection.Emit.Lightweight": {
+              "target": "Package",
+              "version": "[4.7.0, )"
+            },
+            "System.Reflection.Metadata": {
+              "target": "Package",
+              "version": "[6.0.1, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.202/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+C:\Code\Tests\TestHookManagerCore\HookManagerCore\bin\x64\Debug\net8.0\HookManagerCore.deps.json
+C:\Code\Tests\TestHookManagerCore\HookManagerCore\bin\x64\Debug\net8.0\HookManagerCore.dll
+C:\Code\Tests\TestHookManagerCore\HookManagerCore\bin\x64\Debug\net8.0\HookManagerCore.pdb
+C:\Code\Tests\TestHookManagerCore\HookManagerCore\obj\x64\Debug\net8.0\HookManagerCore.csproj.AssemblyReference.cache
+C:\Code\Tests\TestHookManagerCore\HookManagerCore\obj\x64\Debug\net8.0\HookManagerCore.GeneratedMSBuildEditorConfig.editorconfig
+C:\Code\Tests\TestHookManagerCore\HookManagerCore\obj\x64\Debug\net8.0\HookManagerCore.AssemblyInfoInputs.cache
+C:\Code\Tests\TestHookManagerCore\HookManagerCore\obj\x64\Debug\net8.0\HookManagerCore.AssemblyInfo.cs
+C:\Code\Tests\TestHookManagerCore\HookManagerCore\obj\x64\Debug\net8.0\HookManagerCore.csproj.CoreCompileInputs.cache
+C:\Code\Tests\TestHookManagerCore\HookManagerCore\obj\x64\Debug\net8.0\HookManagerCore.dll
+C:\Code\Tests\TestHookManagerCore\HookManagerCore\obj\x64\Debug\net8.0\refint\HookManagerCore.dll
+C:\Code\Tests\TestHookManagerCore\HookManagerCore\obj\x64\Debug\net8.0\HookManagerCore.pdb
+C:\Code\Tests\TestHookManagerCore\HookManagerCore\obj\x64\Debug\net8.0\ref\HookManagerCore.dll
