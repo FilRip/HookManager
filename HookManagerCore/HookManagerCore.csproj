@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Harmony\Harmony.csproj" />
+    <ProjectReference Include="..\ILPack\Lokad.ILPack.csproj" />
   </ItemGroup>
 
 </Project>

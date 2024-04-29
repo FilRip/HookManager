@@ -1045,6 +1045,7 @@ namespace HookManagerCore
 
         private ModuleBuilder _moduleBuilder;
         private AssemblyBuilder _asmBuilder;
+        private Lokad.ILPack.AssemblyGenerator _asmGenerator;
 
         internal TypeBuilder Constructor(uint numHook)
         {
@@ -1064,13 +1065,9 @@ namespace HookManagerCore
         /// </summary>
         public void SaveAssembly()
         {
-            //_asmBuilder?.Save(_asmBuilder.GetName().Name + ".dll");
+            if (_asmGenerator == null)
+                _asmGenerator = new Lokad.ILPack.AssemblyGenerator();
+            _asmGenerator.GenerateAssembly(_asmBuilder, _asmBuilder.GetName().Name + ".dll");
         }
-
-        /*internal CSharpCodeProvider Compiler()
-        {
-            _compiler ??= new();
-            return _compiler;
-        }*/
     }
 }

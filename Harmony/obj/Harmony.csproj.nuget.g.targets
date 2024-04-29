@@ -1,8 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
-<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ImportGroup Condition=" '$(TargetFramework)' == 'net8.0' AND '$(ExcludeRestorePackageImports)' != 'true' ">
-    <Import Project="$(NuGetPackageRoot)system.text.json\8.0.1\buildTransitive\net6.0\System.Text.Json.targets" Condition="Exists('$(NuGetPackageRoot)system.text.json\8.0.1\buildTransitive\net6.0\System.Text.Json.targets')" />
-    <Import Project="$(NuGetPackageRoot)monomod.core\1.1.0\buildTransitive\MonoMod.Core.targets" Condition="Exists('$(NuGetPackageRoot)monomod.core\1.1.0\buildTransitive\MonoMod.Core.targets')" />
-    <Import Project="$(NuGetPackageRoot)ilrepack.lib.msbuild.task\2.0.29\build\ILRepack.Lib.MSBuild.Task.targets" Condition="Exists('$(NuGetPackageRoot)ilrepack.lib.msbuild.task\2.0.29\build\ILRepack.Lib.MSBuild.Task.targets')" />
-  </ImportGroup>
-</Project>

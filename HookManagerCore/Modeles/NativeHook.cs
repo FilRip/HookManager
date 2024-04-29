@@ -205,12 +205,10 @@ namespace HookManagerCore.Modeles
                 Marshal.WriteByte(fromPtr, 10, 0x41);
                 Marshal.WriteByte(fromPtr, 11, 0xff);
                 Marshal.WriteByte(fromPtr, 12, 0xe3);
-
             }
             else if (IntPtr.Size == 4)
             {
                 // x86
-
                 _originalPtrData = new byte[6];
 
                 Marshal.Copy(fromPtr, _originalPtrData, 0, 6);
