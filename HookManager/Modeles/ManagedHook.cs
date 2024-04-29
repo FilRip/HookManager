@@ -429,12 +429,13 @@ namespace HookManager.Modeles
             }
             ilGen = mb.GetILGenerator(256);
 
-            ilGen.DeclareLocal(typeof(ManagedHook)); // Note : local variable : monHook
-            ilGen.DeclareLocal(typeof(List<object>)); // Note : local variable : listParameters
-            ilGen.DeclareLocal(typeof(bool)); // Note : local variable for "if"
-            if (ReturnType != typeof(void))
+            LocalBuilder myHook = ilGen.DeclareLocal(typeof(ManagedHook)); // Note : local variable : monHook
+            LocalBuilder listParameters = ilGen.DeclareLocal(typeof(List<object>)); // Note : local variable : listParameters
+            LocalBuilder ifEnabled = ilGen.DeclareLocal(typeof(bool)); // Note : local variable for "if"
+            LocalBuilder returnValue = null;
+            if (ReturnType != typeof(void) || IsConstructor)
             {
-                ilGen.DeclareLocal(typeof(object));
+                returnValue = ilGen.DeclareLocal(typeof(object));
             }
             Label label1 = ilGen.DefineLabel();
             Label label2 = ilGen.DefineLabel();
@@ -444,22 +445,22 @@ namespace HookManager.Modeles
             ilGen.Emit(OpCodes.Call, typeof(HookPool).GetMethod("GetInstance", BindingFlags.Public | BindingFlags.Static));
             ilGen.Emit(OpCodes.Ldc_I4, _numHook);
             ilGen.Emit(OpCodes.Callvirt, typeof(HookPool).GetMethod(nameof(HookPool.ReturnHook), [typeof(int)]));
-            ilGen.Emit(OpCodes.Stloc_0);
+            ilGen.Emit(OpCodes.Stloc, myHook);
             // List<object> listParameters = new();
             ilGen.Emit(OpCodes.Newobj, typeof(List<object>).GetConstructor([]));
-            ilGen.Emit(OpCodes.Stloc_1);
+            ilGen.Emit(OpCodes.Stloc, listParameters);
             // if (monHook.Actif) // Note : If false, goto label1
             ilGen.Emit(OpCodes.Ldloc_0);
             ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetProperty(nameof(IsEnabled)).GetGetMethod());
             ilGen.Emit(OpCodes.Ldc_I4_0);
             ilGen.Emit(OpCodes.Ceq);
-            ilGen.Emit(OpCodes.Stloc_2);
-            ilGen.Emit(OpCodes.Ldloc_2);
+            ilGen.Emit(OpCodes.Stloc, ifEnabled);
+            ilGen.Emit(OpCodes.Ldloc, ifEnabled);
             ilGen.Emit(OpCodes.Brtrue_S, label1);
             if (!IsStatic)
             {
                 // listParameters.Add(myThis); // Note : myThis is the first parameter of this method
-                ilGen.Emit(OpCodes.Ldloc_1);
+                ilGen.Emit(OpCodes.Ldloc, listParameters);
                 ilGen.Emit(OpCodes.Ldarg_0);
                 ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.Add)));
             }
@@ -469,7 +470,7 @@ namespace HookManager.Modeles
                 int numParam = 1;
                 foreach (ParameterInfo pi in MethodParameters)
                 {
-                    ilGen.Emit(OpCodes.Ldloc_1);
+                    ilGen.Emit(OpCodes.Ldloc, listParameters);
                     ilGen.Emit(OpCodes.Ldarg, numParam++);
                     ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.Add)));
                 }
@@ -483,7 +484,7 @@ namespace HookManager.Modeles
                     for (int i = MethodParameters.Length + 1; i <= _methodBefore.GetParameters().Length - 1; i++)
                     {
                         // listParameters.Add(null);
-                        ilGen.Emit(OpCodes.Ldloc_1);
+                        ilGen.Emit(OpCodes.Ldloc, listParameters);
                         ilGen.Emit(OpCodes.Ldnull);
                         ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.Add)));
                     }
@@ -496,7 +497,7 @@ namespace HookManager.Modeles
                     for (int i = MethodParameters.Length + 1; i <= _methodTo.GetParameters().Length - 1; i++)
                     {
                         // listParameters.Add(null);
-                        ilGen.Emit(OpCodes.Ldloc_1);
+                        ilGen.Emit(OpCodes.Ldloc, listParameters);
                         ilGen.Emit(OpCodes.Ldnull);
                         ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.Add)));
                     }
@@ -505,39 +506,39 @@ namespace HookManager.Modeles
 
             ilGen.MarkLabel(label1);
             // if (monHook.Actif) // Note : If false, goto label2
-            ilGen.Emit(OpCodes.Ldloc_0);
+            ilGen.Emit(OpCodes.Ldloc, myHook);
             ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetProperty(nameof(IsEnabled)).GetGetMethod());
             ilGen.Emit(OpCodes.Ldc_I4_0);
             ilGen.Emit(OpCodes.Ceq);
-            ilGen.Emit(OpCodes.Stloc_2);
-            ilGen.Emit(OpCodes.Ldloc_2);
+            ilGen.Emit(OpCodes.Stloc, ifEnabled);
+            ilGen.Emit(OpCodes.Ldloc, ifEnabled);
             ilGen.Emit(OpCodes.Brtrue_S, label2);
             if (_isDecorativeMethod)
             {
                 if (_methodBefore != null)
                 {
                     // monHook.MethodeAvant.Invoke(<Arg>, listParameters.ToArray()); // Note : Arg is null, if static, else contains the instance of the object (myThis, first parameter of this method)
-                    ilGen.Emit(OpCodes.Ldloc_0);
+                    ilGen.Emit(OpCodes.Ldloc, myHook);
                     ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetProperty(nameof(MethodBefore)).GetGetMethod());
                     if (!IsStatic)
                         ilGen.Emit(OpCodes.Ldarg_0);
                     else
                         ilGen.Emit(OpCodes.Ldnull);
-                    ilGen.Emit(OpCodes.Ldloc_1);
+                    ilGen.Emit(OpCodes.Ldloc, listParameters);
                     ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.ToArray), Type.EmptyTypes));
                     ilGen.Emit(OpCodes.Callvirt, typeof(MethodBase).GetMethod(nameof(MethodBase.Invoke), [typeof(object), typeof(object[])]));
                     ilGen.Emit(OpCodes.Pop);
                 }
                 // monHook.AppelMethodeOriginale(<myThis>, listParameters.ToArray());  // Note : set <myThis> if it's not a static method, else <null>
                 // ou monHook.AppelMethodeOriginale(<myThis>, object[]null);     // If the method has no parameter
-                ilGen.Emit(OpCodes.Ldloc_0);
+                ilGen.Emit(OpCodes.Ldloc, myHook);
                 if (!IsStatic)
                     ilGen.Emit(OpCodes.Ldarg_0);
                 else
                     ilGen.Emit(OpCodes.Ldnull);
                 if (MethodParameters.Length > 0)
                 {
-                    ilGen.Emit(OpCodes.Ldloc_1);
+                    ilGen.Emit(OpCodes.Ldloc, listParameters);
                     ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.ToArray), Type.EmptyTypes));
                 }
                 else
@@ -545,19 +546,19 @@ namespace HookManager.Modeles
                 ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetMethod(nameof(CallOriginalMethod), BindingFlags.Instance | BindingFlags.Public));
                 // We keep the return of method, if the original method return a value (is not a void)
                 if (ReturnType != typeof(void))
-                    ilGen.Emit(OpCodes.Stloc_3);
+                    ilGen.Emit(OpCodes.Stloc, returnValue);
                 else
                     ilGen.Emit(OpCodes.Pop);
                 if (_methodAfter != null)
                 {
                     // monHook.MethodeApres.Invoke(<Arg>, listParameters.ToArray());
-                    ilGen.Emit(OpCodes.Ldloc_0);
+                    ilGen.Emit(OpCodes.Ldloc, myHook);
                     ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetProperty(nameof(MethodAfter)).GetGetMethod());
                     if (!IsStatic)
                         ilGen.Emit(OpCodes.Ldarg_0);
                     else
                         ilGen.Emit(OpCodes.Ldnull);
-                    ilGen.Emit(OpCodes.Ldloc_1);
+                    ilGen.Emit(OpCodes.Ldloc, listParameters);
                     ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.ToArray), Type.EmptyTypes));
                     ilGen.Emit(OpCodes.Callvirt, typeof(MethodBase).GetMethod(nameof(MethodBase.Invoke), [typeof(object), typeof(object[])]));
                     ilGen.Emit(OpCodes.Pop);
@@ -566,18 +567,18 @@ namespace HookManager.Modeles
             else
             {
                 // monHook.ToMethode.Invoke(<Arg>, listParameters.ToArray()); // Note : Arg is null if static, else fill to myThis (first parameter of this method, the instance of the object)
-                ilGen.Emit(OpCodes.Ldloc_0);
+                ilGen.Emit(OpCodes.Ldloc, myHook);
                 ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetProperty(nameof(ToMethod)).GetGetMethod());
                 if (!IsStatic)
                     ilGen.Emit(OpCodes.Ldarg_0);
                 else
                     ilGen.Emit(OpCodes.Ldnull);
-                ilGen.Emit(OpCodes.Ldloc_1);
+                ilGen.Emit(OpCodes.Ldloc, listParameters);
                 ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.ToArray), Type.EmptyTypes));
                 ilGen.Emit(OpCodes.Callvirt, typeof(MethodBase).GetMethod(nameof(MethodBase.Invoke), [typeof(object), typeof(object[])]));
                 // We keep the return of method, if the original method return a value (is not a void)
                 if (ReturnType != typeof(void))
-                    ilGen.Emit(OpCodes.Stloc_3);
+                    ilGen.Emit(OpCodes.Stloc, returnValue);
                 else
                     ilGen.Emit(OpCodes.Pop);
             }
@@ -588,20 +589,20 @@ namespace HookManager.Modeles
             {
                 // monHook.AppelMethodeOriginale(<myThis>, listParameters.ToArray());  // Note : set <myThis> if it's not a static method, else <null>
                 // or monHook.AppelMethodeOriginale(<myThis>, object[]null);     // If the method has no parameter
-                ilGen.Emit(OpCodes.Ldloc_0);
+                ilGen.Emit(OpCodes.Ldloc, myHook);
                 if (!IsStatic)
                     ilGen.Emit(OpCodes.Ldarg_0);
                 else
                     ilGen.Emit(OpCodes.Ldnull);
                 if (MethodParameters.Length > 0)
                 {
-                    ilGen.Emit(OpCodes.Ldloc_1);
+                    ilGen.Emit(OpCodes.Ldloc, listParameters);
                     ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.ToArray), Type.EmptyTypes));
                 }
                 else
                     ilGen.Emit(OpCodes.Ldnull);
                 ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetMethod(nameof(CallOriginalMethod), BindingFlags.Instance | BindingFlags.Public));
-                ilGen.Emit(OpCodes.Stloc_3);
+                ilGen.Emit(OpCodes.Stloc, returnValue);
             }
             else
             {
@@ -618,14 +619,14 @@ namespace HookManager.Modeles
                 }
                 ilGen.Emit(OpCodes.Call, mbParent);
                 if (ReturnType != typeof(void))
-                    ilGen.Emit(OpCodes.Stloc_3);
+                    ilGen.Emit(OpCodes.Stloc, returnValue);
             }
             // return <Resultat>; // Note : we return the result previously keep, if not a void
             ilGen.MarkLabel(label3);
             // End, we return the result previously keep, if not a void
             if (ReturnType != typeof(void))
             {
-                ilGen.Emit(OpCodes.Ldloc_3);
+                ilGen.Emit(OpCodes.Ldloc, returnValue);
             }
             // Note : End of method
             ilGen.Emit(OpCodes.Ret);
