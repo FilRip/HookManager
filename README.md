@@ -17,5 +17,3 @@ Support Interfaces too<br><br>
 You can also replace/decorate constructors (beta, not recommended yet. Try it and if you have a crash or an error, please report me)<br><br>
 
 Compatible Net Framework 4.x.x
-
-Net 5.0 under work
