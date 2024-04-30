@@ -672,7 +672,7 @@ namespace HarmonyLib
 									}
 								}
 
-								if (methodInfo.IsStatic is false && harmonyMethod.nonVirtualDelegate is false)
+								if (!methodInfo.IsStatic && !harmonyMethod.nonVirtualDelegate)
 								{
 									emitter.Emit(OpCodes.Dup);
 									emitter.Emit(OpCodes.Ldvirtftn, methodInfo);
@@ -836,13 +836,15 @@ namespace HarmonyLib
 						emitter.Emit(OpCodes.Stobj, tmpBoxVar.Value);
 					});
 
-					var returnType = fix.ReturnType;
-					if (returnType != typeof(void))
+					Type methodReturnType = fix.ReturnType;
+					if (methodReturnType != typeof(void))
 					{
-						if (returnType != typeof(bool))
-							throw new Exception($"Prefix patch {fix} has not \"bool\" or \"void\" return type: {fix.ReturnType}");
-						emitter.Emit(OpCodes.Stloc, runOriginalVariable);
-					}
+#pragma warning disable S125 // Sections of code should not be commented out
+                        /*if (methodReturnType != typeof(bool))
+                                                    throw new Exception($"Prefix patch {fix} has not \"bool\" or \"void\" return type: {fix.ReturnType}");*/
+#pragma warning restore S125 // Sections of code should not be commented out
+                        emitter.Emit(OpCodes.Stloc, runOriginalVariable);
+                    }
 
 					if (skipLabel.HasValue)
 					{

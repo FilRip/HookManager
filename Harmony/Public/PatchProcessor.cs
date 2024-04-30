@@ -118,13 +118,12 @@ namespace HarmonyLib
 
 		/// <summary>Applies all registered patches</summary>
 		/// <returns>The generated replacement method</returns>
-		///
 		public MethodInfo Patch()
 		{
 			if (original is null)
 				throw new NullReferenceException($"Null method for {instance.Id}");
 
-			if (original.IsDeclaredMember() is false)
+			if (!original.IsDeclaredMember())
 			{
 				var declaredMember = original.GetDeclaredMember();
 				throw new ArgumentException($"You can only patch implemented methods/constructors. Patch the declared method {declaredMember.FullDescription()} instead.");

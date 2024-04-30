@@ -1,13 +1,10 @@
-﻿using System.Runtime.Serialization;
-
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 
 namespace HookManagerCore.Exceptions
 {
     /// <summary>
     /// Exception when compile generated C# code
     /// </summary>
-    [Serializable()]
     public class CompilationException : HookManagerException
     {
         private readonly IEnumerable<Diagnostic> _errors;
@@ -28,8 +25,5 @@ namespace HookManagerCore.Exceptions
         {
             get { return _errors; }
         }
-
-        /// <inheritdoc/>
-        protected CompilationException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

@@ -1,12 +1,8 @@
-﻿using System;
-using System.Runtime.Serialization;
-
-namespace HookManagerCore.Exceptions
+﻿namespace HookManagerCore.Exceptions
 {
     /// <summary>
     /// Exception lors de la tentative d'ajouter une décoration à une méthode
     /// </summary>
-    [Serializable()]
     public class DecorationMethodsException : HookManagerException
     {
         /// <summary>
@@ -22,8 +18,5 @@ namespace HookManagerCore.Exceptions
                 return "Aucune méthode de décoration spécifiée.";
             }
         }
-
-        /// <inheritdoc/>
-        protected DecorationMethodsException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

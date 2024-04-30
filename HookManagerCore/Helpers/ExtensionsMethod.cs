@@ -13,7 +13,7 @@ namespace HookManagerCore.Helpers
     /// </summary>
     public static class ExtensionsMethod
     {
-        internal static DynamicMethod GetOriginalMethod(this MethodInfo method)
+        internal static DynamicMethod GetOriginalMethod(this MethodBase method)
         {
             return (DynamicMethod)HookPool.GetInstance().MyHarmony.Patch(method);
         }
@@ -114,13 +114,13 @@ namespace HookManagerCore.Helpers
             Type classSource;
             MethodInfo mi;
 
-            if (methodName.IndexOf(".") >= 0)
+            if (methodName.Contains('.'))
             {
-                className = methodName.Substring(0, methodName.LastIndexOf("."));
+                className = methodName[..methodName.LastIndexOf('.')];
                 classSource = AppDomain.CurrentDomain.GetAssemblies().SearchType(className);
                 if (classSource == null)
                     throw new NoTypeInNameException(methodName);
-                methodNameSeparated = methodName.Substring(methodName.LastIndexOf(".") + 1);
+                methodNameSeparated = methodName[(methodName.LastIndexOf('.') + 1)..];
                 mi = classSource.GetMethod(methodNameSeparated, HookPool.GetInstance().DefaultFilters);
                 if (mi == null)
                     throw new TypeOrMethodNotFoundException(className, methodNameSeparated);

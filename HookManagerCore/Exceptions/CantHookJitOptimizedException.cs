@@ -1,12 +1,8 @@
-﻿using System;
-using System.Runtime.Serialization;
-
-namespace HookManagerCore.Exceptions
+﻿namespace HookManagerCore.Exceptions
 {
     /// <summary>
     /// Erreur, impossible de remplacer une méthode d'un assembly compilé avec l'option "JIT Optimized"
     /// </summary>
-    [Serializable()]
     public class CantHookJitOptimizedException : HookManagerException
     {
         private readonly string _nomAssembly;
@@ -64,8 +60,5 @@ namespace HookManagerCore.Exceptions
                 return _nomMethode;
             }
         }
-
-        /// <inheritdoc/>
-        protected CantHookJitOptimizedException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

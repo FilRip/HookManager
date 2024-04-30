@@ -1,12 +1,8 @@
-﻿using System;
-using System.Runtime.Serialization;
-
-namespace HookManagerCore.Exceptions
+﻿namespace HookManagerCore.Exceptions
 {
     /// <summary>
     /// Erreur, le type fournit, pour un Remplacement de toutes ou parties des méthodes d'une interface, n'est pas un type d'Interface
     /// </summary>
-    [Serializable()]
     public class NotInterfaceException : HookManagerException
     {
         private readonly Type _type;
@@ -39,8 +35,5 @@ namespace HookManagerCore.Exceptions
                 return _type;
             }
         }
-
-        /// <inheritdoc/>
-        protected NotInterfaceException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

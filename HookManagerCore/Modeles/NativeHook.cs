@@ -174,7 +174,8 @@ namespace HookManagerCore.Modeles
 
         private IntPtr GetAddress(string module, string method)
         {
-            if (!_modules.ContainsKey(module)) _modules.Add(module, WinApi.LoadLibraryEx(module, IntPtr.Zero, 0));
+            if (!_modules.ContainsKey(module))
+                _modules.Add(module, WinApi.LoadLibraryExA(module, IntPtr.Zero, 0));
             return WinApi.GetProcAddress(_modules[module], method);
         }
 

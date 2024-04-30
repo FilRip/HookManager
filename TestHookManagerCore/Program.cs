@@ -5,7 +5,7 @@ using HookManagerCore.Modeles;
 
 namespace TestHookManagerCore
 {
-    internal class Program
+    internal static class Program
     {
 #pragma warning disable IDE0060 // Supprimer le paramètre inutilisé
         static void Main(string[] args)
@@ -47,7 +47,7 @@ namespace TestHookManagerCore
             Console.WriteLine(monTest.TesteRetour());
             Console.WriteLine("");
             Console.WriteLine("Test disable hook");
-            HookPool.GetInstance().ReturnHook(typeof(Teste).GetMethod(nameof(Teste.EcrireConsole), BindingFlags.Instance | BindingFlags.Public)).Disable();
+            HookPool.GetInstance().ReturnHook(typeof(Teste).GetMethod(nameof(Teste.EcrireConsole), BindingFlags.Instance | BindingFlags.Public)).Enabled = false;
             monTest.EcrireConsole();
 
             Console.WriteLine("Test hook api windows (y/n) ?");
@@ -58,9 +58,10 @@ namespace TestHookManagerCore
             }
             Console.WriteLine("");
 
-            GacHook hookConsole = HookPool.GetInstance().AddGacHook(typeof(Console).GetMethod(nameof(Console.WriteLine), BindingFlags.Static | BindingFlags.Public, null, [typeof(string)], null), typeof(TesteHook).GetMethod(nameof(TesteHook.HookSystemConsole)));
+            ManagedHook hookConsole = HookPool.GetInstance().AddHook(typeof(Console).GetMethod(nameof(Console.WriteLine), BindingFlags.Static | BindingFlags.Public, null, [typeof(string)], null), typeof(TesteHook).GetMethod(nameof(TesteHook.HookSystemConsole)));
+            //GacHook hookConsole = HookPool.GetInstance().AddGacHook(typeof(Console).GetMethod(nameof(Console.WriteLine), BindingFlags.Static | BindingFlags.Public, null, [typeof(string)], null), typeof(TesteHook).GetMethod(nameof(TesteHook.HookSystemConsole)));
             Console.WriteLine("test call methode in the GAC : System.Console");
-            hookConsole.Remove();
+            hookConsole.Enabled = false;
 
             Classe1 classe1 = new();
             Classe2 classe2 = new();
@@ -96,7 +97,7 @@ namespace TestHookManagerCore
             ManagedHook mh = HookPool.GetInstance().AddConstructorDecoration(ci, miAvant, miApres);
             _ = new Teste();
             Console.WriteLine("");
-            mh.Disable();
+            mh.Enabled = false;
 
             Console.WriteLine("Test replacement constructor");
             MethodInfo miNewConstructeur = typeof(TesteHook).GetMethod(nameof(TesteHook.RemplaceConstructeur), BindingFlags.Static | BindingFlags.Public);
@@ -106,7 +107,7 @@ namespace TestHookManagerCore
             Console.WriteLine("");
 
             Console.WriteLine("Disable replacement constructor");
-            mh.Disable();
+            mh.Enabled = false;
             monTest = new();
             Console.WriteLine("");
 

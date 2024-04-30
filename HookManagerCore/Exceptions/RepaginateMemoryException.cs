@@ -1,12 +1,8 @@
-﻿using System;
-using System.Runtime.Serialization;
-
-namespace HookManagerCore.Exceptions
+﻿namespace HookManagerCore.Exceptions
 {
     /// <summary>
     /// Erreur lors de la tentative de repaginer un espace mémoire d'après un pointeur mémoire
     /// </summary>
-    [Serializable()]
     public class RepaginateMemoryException : HookManagerException
     {
         private readonly IntPtr _pointeurMemoire;
@@ -34,16 +30,6 @@ namespace HookManagerCore.Exceptions
         public IntPtr MemoryPtr
         {
             get { return _pointeurMemoire; }
-        }
-
-        /// <inheritdoc/>
-        protected RepaginateMemoryException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-
-        /// <inheritdoc/>
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            base.GetObjectData(info, context);
-            info.AddValue(nameof(MemoryPtr), _pointeurMemoire);
         }
     }
 }

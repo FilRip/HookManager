@@ -1,7 +1,4 @@
-﻿using System;
-using System.Runtime.Serialization;
-
-namespace HookManagerCore.Exceptions
+﻿namespace HookManagerCore.Exceptions
 {
     /// <summary>
     /// Type d'erreur générée lors de la tentative de substituer une propriété
@@ -34,7 +31,6 @@ namespace HookManagerCore.Exceptions
     /// <summary>
     /// Une erreur est subvenue lors de la tentative de substituer une propriété
     /// </summary>
-    [Serializable()]
     public class HookPropertyException : HookManagerException
     {
         private readonly string _methodGet, _methodSet;
@@ -99,8 +95,5 @@ namespace HookManagerCore.Exceptions
         {
             get { return _propertySource; }
         }
-
-        /// <inheritdoc/>
-        protected HookPropertyException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

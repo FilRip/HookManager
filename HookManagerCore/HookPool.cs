@@ -33,7 +33,7 @@ namespace HookManagerCore
         internal const string METHOD_NAME = "HookMethode_";
         internal const string PARENT_METHOD_NAME = "InvokeParente_";
 
-        private Harmony _harmony = new("HookManagerCore");
+        private readonly Harmony _harmony = new("HookManagerCore");
 
         internal HookPool()
         {
@@ -147,11 +147,11 @@ namespace HookManagerCore
             if (string.IsNullOrWhiteSpace(methodGet) && string.IsNullOrWhiteSpace(methodSet))
                 throw new HookPropertyException(propertyFrom, "", "", EErrorCodePropertyHook.UselessReplacement);
             PropertyInfo piSource = null;
-            if (propertyFrom.IndexOf(".") >= 0)
+            if (propertyFrom.Contains('.'))
             {
-                string nomClasse = propertyFrom.Substring(0, propertyFrom.LastIndexOf("."));
+                string nomClasse = propertyFrom.Substring(0, propertyFrom.LastIndexOf('.'));
                 Type classeSource = AppDomain.CurrentDomain.GetAssemblies().SearchType(nomClasse) ?? throw new NoTypeInNameException(propertyFrom);
-                string prop = propertyFrom.Substring(propertyFrom.LastIndexOf(".") + 1);
+                string prop = propertyFrom.Substring(propertyFrom.LastIndexOf('.') + 1);
                 piSource = classeSource.GetProperty(prop, DefaultFilters);
             }
 
@@ -447,12 +447,12 @@ namespace HookManagerCore
                 throw new ArgumentNullException(nameof(methodTo));
             if (methodFrom?.DeclaringType == null)
                 throw new CantHookDynamicMethodException(methodFrom?.Name);
-            if (methodFrom.DeclaringType.Assembly.IsJITOptimizerEnabled() && Debugger.IsAttached)
+            /*if (methodFrom.DeclaringType.Assembly.IsJITOptimizerEnabled() && Debugger.IsAttached)
                 throw new CantHookJitOptimizedException(methodFrom.DeclaringType.Assembly?.GetName()?.Name);
             if (methodFrom.DeclaringType.Assembly.IsJITOptimizerEnabled() && methodFrom is MethodInfo miFrom && miFrom.ReturnType != typeof(void))
                 throw new CantHookJitOptimizedException(methodFrom.DeclaringType.Assembly?.GetName()?.Name, methodFrom.Name);
             if (methodFrom.DeclaringType.Assembly.IsJITOptimizerEnabled() && methodFrom.IsConstructor)
-                throw new CantHookJitOptimizedException(methodFrom.DeclaringType.Assembly?.GetName()?.Name, methodFrom.Name);
+                throw new CantHookJitOptimizedException(methodFrom.DeclaringType.Assembly?.GetName()?.Name, methodFrom.Name);*/
             if (methodFrom.DeclaringType.Assembly == Assembly.GetExecutingAssembly())
                 throw new DoNotHookMyLibException();
             if (MethodAlreadyReplace(methodFrom))
@@ -669,7 +669,7 @@ namespace HookManagerCore
             StackFrame[] stacks = new StackTrace(ModeInternalDebug).GetFrames();
             for (int i = stacks.Length - 1; i >= 0; i--)
             {
-                if (stacks[i].GetMethod().DeclaringType.Name.StartsWith(CLASS_NAME))
+                if (stacks[i].GetMethod().DeclaringType?.Name?.StartsWith(CLASS_NAME) == true)
                 {
                     numHook = int.Parse(stacks[i].GetMethod().DeclaringType.Name.Replace(CLASS_NAME, ""));
                     break;
@@ -839,7 +839,9 @@ namespace HookManagerCore
                 {
                     foreach (string miName in listeMethodes.Select(m => m.Name))
                     {
-                        AddHook(typeEnCours.GetMethod(miName), TypeReplacement.GetMethod(miName), autoEnable);
+                        MethodInfo mi = typeEnCours.GetMethod(miName);
+                        if (mi.DeclaringType == mi.ReflectedType)
+                            AddHook(mi, TypeReplacement.GetMethod(miName), autoEnable);
                     }
                 }
             }

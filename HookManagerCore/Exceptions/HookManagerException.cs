@@ -1,12 +1,8 @@
-﻿using System;
-using System.Runtime.Serialization;
-
-namespace HookManagerCore.Exceptions
+﻿namespace HookManagerCore.Exceptions
 {
     /// <summary>
     /// Classe de base pour toutes erreurs de la librairie présente ; HookManager
     /// </summary>
-    [Serializable()]
     public abstract class HookManagerException : Exception
     {
         /// <inheritdoc/>
@@ -14,8 +10,5 @@ namespace HookManagerCore.Exceptions
 
         /// <inheritdoc/>
         protected HookManagerException(string message) : base(message) { }
-
-        /// <inheritdoc/>
-        protected HookManagerException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

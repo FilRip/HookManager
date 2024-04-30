@@ -7,6 +7,7 @@ using System.Text;
 
 using HookManagerCore.Exceptions;
 using HookManagerCore.Helpers;
+using HookManagerCore.Modeles;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -20,23 +21,19 @@ namespace HookManagerCore.Modeles
     public sealed class ManagedHook
     {
         private readonly uint _numHook;
-        private readonly MethodInfo _methodFrom;
+        private readonly MethodBase _methodFrom;
         private readonly MethodInfo _methodTo;
         private MethodInfo _methodGateway;
         private object _myDynamicClass;
         private MethodInfo _parentMethod;
         private bool _enabled;
-        private readonly ConstructorInfo _constructor;
 
         private readonly bool _isDecorativeMethod;
         private readonly MethodInfo _methodBefore;
         private readonly MethodInfo _methodAfter;
 
-        private byte _opOriginal;
-        private int _ptrOriginal;
-        private uint _newPtr;
-        private IntPtr _constructorPtr;
-        private DynamicMethod _copyParent;
+        /*private byte _opOriginal;
+        private int _ptrOriginal;*/
 
         private readonly object _threadSafe = new();
 
@@ -46,12 +43,17 @@ namespace HookManagerCore.Modeles
         public bool Enabled
         {
             get { return _enabled; }
+            set
+            {
+                lock (_threadSafe)
+                    _enabled = value;
+            }
         }
 
         /// <summary>
         /// Original method
         /// </summary>
-        public MethodInfo FromMethod
+        public MethodBase FromMethod
         {
             get { return _methodFrom; }
         }
@@ -133,7 +135,7 @@ namespace HookManagerCore.Modeles
         internal ManagedHook(uint numHook, ConstructorInfo constructeur, MethodInfo methodeDeRemplacement, bool autoActive = true)
         {
             _numHook = numHook;
-            _constructor = constructeur;
+            _methodFrom = constructeur;
             _methodTo = methodeDeRemplacement;
 
             Prepare(autoActive);
@@ -146,7 +148,7 @@ namespace HookManagerCore.Modeles
         internal ManagedHook(uint numHook, ConstructorInfo constructeur, MethodInfo methodeAvant, MethodInfo methodeApres, bool autoActive = true)
         {
             _numHook = numHook;
-            _constructor = constructeur;
+            _methodFrom = constructeur;
             _methodBefore = methodeAvant;
             _methodAfter = methodeApres;
 
@@ -159,27 +161,11 @@ namespace HookManagerCore.Modeles
         {
             if (_isDecorativeMethod)
             {
-                if (IsConstructor)
-                {
-                    RuntimeHelpers.PrepareMethod(_constructor.MethodHandle);
-                    if (_methodBefore != null)
-                        RuntimeHelpers.PrepareMethod(_methodBefore.MethodHandle);
-                    if (_methodAfter != null)
-                        RuntimeHelpers.PrepareMethod(_methodAfter.MethodHandle);
-                }
-                else
-                {
-                    RuntimeHelpers.PrepareMethod(_methodFrom.MethodHandle);
-                    if (_methodBefore != null)
-                        RuntimeHelpers.PrepareMethod(_methodBefore.MethodHandle);
-                    if (_methodAfter != null)
-                        RuntimeHelpers.PrepareMethod(_methodAfter.MethodHandle);
-                }
-            }
-            else if (IsConstructor)
-            {
-                RuntimeHelpers.PrepareMethod(_methodTo.MethodHandle);
-                RuntimeHelpers.PrepareMethod(_constructor.MethodHandle);
+                RuntimeHelpers.PrepareMethod(_methodFrom.MethodHandle);
+                if (_methodBefore != null)
+                    RuntimeHelpers.PrepareMethod(_methodBefore.MethodHandle);
+                if (_methodAfter != null)
+                    RuntimeHelpers.PrepareMethod(_methodAfter.MethodHandle);
             }
             else
             {
@@ -192,62 +178,23 @@ namespace HookManagerCore.Modeles
             else
                 BuildMethodBuilder();// Faster but no debug step by step inside generated method
 
-            if (IsConstructor)
-            {
-                _methodGateway = _myDynamicClass.GetType().GetMethod($"{HookPool.METHOD_NAME}{_numHook}", BindingFlags.NonPublic | BindingFlags.Static);
-                RuntimeHelpers.PrepareMethod(_methodGateway.MethodHandle);
+            _methodGateway = _myDynamicClass.GetType().GetMethod($"{HookPool.METHOD_NAME}{_numHook}", BindingFlags.NonPublic | BindingFlags.Static);
+            RuntimeHelpers.PrepareMethod(_methodGateway.MethodHandle);
 
-                IntPtr ptrGateway;
-                if (Debugger.IsAttached)
-                {
-                    if (IntPtr.Size == 4)
-                    {
-                        _constructorPtr = new IntPtr((int)_constructor.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructor.MethodHandle.GetFunctionPointer() + 1) + 5);
-                        ptrGateway = new IntPtr((int)_methodGateway.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodGateway.MethodHandle.GetFunctionPointer() + 1) + 5);
-                    }
-                    else
-                    {
-                        _constructorPtr = new IntPtr((long)_constructor.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_constructor.MethodHandle.GetFunctionPointer() + 1) + 5);
-                        ptrGateway = new IntPtr((long)_methodGateway.MethodHandle.GetFunctionPointer() + Marshal.ReadInt32(_methodGateway.MethodHandle.GetFunctionPointer() + 1) + 5);
-                    }
-                }
-                else
-                {
-                    _constructorPtr = _constructor.MethodHandle.GetFunctionPointer();
-                    ptrGateway = _methodGateway.MethodHandle.GetFunctionPointer();
-                }
+            _parentMethod = _methodFrom.GetOriginalMethod();
+            _methodFrom.ReplaceManagedMethod(_methodGateway);
 
-                _copyParent = _constructor.CopyMethod();
-
-                _newPtr = (uint)(int)((long)ptrGateway - ((long)_constructorPtr + 1 + sizeof(uint)));
-
-                if (!WinApi.VirtualProtect(_constructorPtr, (IntPtr)5, 0x40, out _))
-                    throw new RepaginateMemoryException(_constructorPtr);
-
-                _opOriginal = Marshal.ReadByte(_constructorPtr);
-                _ptrOriginal = Marshal.ReadInt32(_constructorPtr + 1);
-            }
-            else
-            {
-                _methodGateway = _myDynamicClass.GetType().GetMethod($"{HookPool.METHOD_NAME}{_numHook}", BindingFlags.NonPublic | BindingFlags.Static);
-                RuntimeHelpers.PrepareMethod(_methodGateway.MethodHandle);
-
-                _parentMethod = _myDynamicClass.GetType().GetMethod($"{HookPool.PARENT_METHOD_NAME}{_numHook}", BindingFlags.NonPublic | BindingFlags.Static);
-                RuntimeHelpers.PrepareMethod(_parentMethod.MethodHandle);
-            }
-
-            if (autoEnable)
-                Enable();
+            Enabled = autoEnable;
         }
 
         private Type ReturnType
         {
             get
             {
-                if (_methodFrom != null)
-                    return _methodFrom.ReturnType;
-                else if (_constructor != null)
-                    return _constructor.DeclaringType;
+                if (_methodFrom is MethodInfo mi)
+                    return mi.ReturnType;
+                else if (_methodFrom is ConstructorInfo ci)
+                    return ci.DeclaringType;
                 else
                     return typeof(void);
             }
@@ -259,8 +206,6 @@ namespace HookManagerCore.Modeles
             {
                 if (_methodFrom != null)
                     return _methodFrom.GetParameters();
-                else if (_constructor != null)
-                    return _constructor.GetParameters();
                 else
                     return [];
             }
@@ -272,49 +217,8 @@ namespace HookManagerCore.Modeles
             {
                 if (_methodFrom != null)
                     return _methodFrom.IsStatic;
-                else if (_constructor != null)
-                    return _constructor.IsStatic;
                 else
                     return true;
-            }
-        }
-
-        /// <summary>
-        /// Active this hook (enable the replacement or the decorate of this hook)
-        /// </summary>
-        public void Enable()
-        {
-            lock (_threadSafe)
-            {
-                if (!_enabled)
-                {
-                    _parentMethod = _methodFrom.GetOriginalMethod();
-                    _methodFrom.ReplaceManagedMethod(_methodGateway);
-
-                    _enabled = true;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Disable this hook (disable the replacement or the decorate of this hook)
-        /// </summary>
-        public void Disable()
-        {
-            lock (_threadSafe)
-            {
-                if (_enabled)
-                {
-                    if (IsConstructor)
-                    {
-                        Marshal.WriteByte(_constructorPtr, _opOriginal);
-                        Marshal.WriteInt32(_constructorPtr + 1, _ptrOriginal);
-                    }
-                    else
-                        _methodFrom.ReplaceManagedMethod(_parentMethod);
-
-                    _enabled = false;
-                }
             }
         }
 
@@ -323,7 +227,7 @@ namespace HookManagerCore.Modeles
         /// </summary>
         public bool IsConstructor
         {
-            get { return _constructor != null; }
+            get { return _methodFrom is ConstructorInfo; }
         }
 
         /// <summary>
@@ -334,64 +238,28 @@ namespace HookManagerCore.Modeles
         /// <remarks>Si c'est un constructeur qui a été substitué, vous ne pouvez pas faire de pas à pas dans le constructeur d'origine (mais il est bel et bien appelé)</remarks>
         public object CallOriginalMethod(object instance = null, params object[] args)
         {
-            if (IsConstructor)
-            {
-                if ((args == null && _constructor.GetParameters().Length > 0) || (args != null && args.Length < _constructor.GetParameters().Length))
-                    for (int i = args?.Length ?? 0; i < _constructor.GetParameters().Length + 1; i++)
-                        args = args.Concat(null).ToArray();
-                if (args == null || args.Length == 0)
-                    return _copyParent.Invoke(null, new object[] { instance }.ToArray());
+            if (!IsStatic)
+                if (instance == null)
+                    throw new ArgumentNullException(nameof(instance));
+                else if (args != null && args.Length > 0)
+                    args = new object[] { instance }.Concat(args).ToArray();
                 else
-                    return _copyParent.Invoke(null, new object[] { instance }.Concat(args).ToArray());
+                    args = [instance];
+
+            if (args != null && args.Length < _methodFrom.GetParameters().Length)
+                for (int i = args.Length; i < _methodFrom.GetParameters().Length + 1; i++)
+                    args = args.Concat(null).ToArray();
+
+            if (ReturnType == typeof(void))
+            {
+                _parentMethod.Invoke(null, (args == null || args.Length == 0 ? null : args));
+                return null;
             }
             else
-            {
-                if (!IsStatic)
-                    if (instance == null)
-                        throw new ArgumentNullException(nameof(instance));
-                    else if (args != null && args.Length > 0)
-                        args = new object[] { instance }.Concat(args).ToArray();
-                    else
-                        args = [instance];
-
-                if (args != null && args.Length < _methodFrom.GetParameters().Length)
-                    for (int i = args.Length; i < _methodFrom.GetParameters().Length + 1; i++)
-                        args = args.Concat(null).ToArray();
-
-                if (ReturnType == typeof(void))
-                {
-                    _parentMethod.Invoke(null, (args == null || args.Length == 0 ? null : args));
-                    return null;
-                }
-                else
-                    return _parentMethod.Invoke(null, (args == null || args.Length == 0 ? null : args));
-            }
+                return _parentMethod.Invoke(null, (args == null || args.Length == 0 ? null : args));
         }
 
         #region Version MethodBuilder
-
-#pragma warning disable S1144 // Unused private types or members should be removed
-        private MethodBuilder CreateMethodBuilderParent()
-        {
-            TypeBuilder tb = HookPool.GetInstance().Constructor(_numHook);
-            ILGenerator ilGen;
-            List<Type> listParametersType = [];
-            // If it's not a static, we add the instance of object as first parameter
-            if (!IsStatic)
-                listParametersType.Add(typeof(object));
-            if (MethodParameters != null && MethodParameters.Length > 0)
-                foreach (ParameterInfo parameterInfo in MethodParameters)
-                    listParametersType.Add(parameterInfo.ParameterType);
-
-            MethodBuilder mbParent = tb.DefineMethod(HookPool.PARENT_METHOD_NAME + _numHook.ToString(), MethodAttributes.Private | MethodAttributes.Static, (ReturnType == typeof(void) ? typeof(void) : typeof(object)), listParametersType.ToArray());
-            ilGen = mbParent.GetILGenerator();
-            ilGen.Emit(OpCodes.Ldstr, "Unable to call parent method");
-            ilGen.Emit(OpCodes.Newobj, typeof(Exception).GetConstructor([typeof(string)]));
-            ilGen.Emit(OpCodes.Throw);
-            tb.CreateType();
-            return mbParent;
-        }
-#pragma warning restore S1144 // Unused private types or members should be removed
 
         // Faster but no debug step by step inside generated method
         private void BuildMethodBuilder()
@@ -401,33 +269,32 @@ namespace HookManagerCore.Modeles
 
             List<Type> listParametersType = [];
             // If it's not a static, we add the instance of object as first parameter
+            if (ReturnType != typeof(void))
+                listParametersType.Add(Type.GetType(ReturnType.FullName + "&"));
             if (!IsStatic)
                 listParametersType.Add(typeof(object));
             if (MethodParameters != null && MethodParameters.Length > 0)
                 foreach (ParameterInfo parameterInfo in MethodParameters)
                     listParametersType.Add(parameterInfo.ParameterType);
 
-            MethodBuilder mbParent = tb.DefineMethod(HookPool.PARENT_METHOD_NAME + _numHook.ToString(), MethodAttributes.Private | MethodAttributes.Static, (ReturnType == typeof(void) ? typeof(void) : typeof(object)), listParametersType.ToArray());
-            ilGen = mbParent.GetILGenerator();
-            ilGen.Emit(OpCodes.Ldstr, "Unable to call parent method");
-            ilGen.Emit(OpCodes.Newobj, typeof(Exception).GetConstructor([typeof(string)]));
-            ilGen.Emit(OpCodes.Throw);
-
-            MethodBuilder mb = tb.DefineMethod(HookPool.METHOD_NAME + _numHook.ToString(), MethodAttributes.Private | MethodAttributes.Static, (ReturnType == typeof(void) ? typeof(void) : typeof(object)), listParametersType.ToArray());
+            MethodBuilder mb = tb.DefineMethod(HookPool.METHOD_NAME + _numHook.ToString(), MethodAttributes.Private | MethodAttributes.Static, typeof(bool), listParametersType.ToArray());
+            ParameterBuilder returnValue = null;
+            if (ReturnType != typeof(void))
+            {
+                returnValue = mb.DefineParameter(1, ParameterAttributes.In, "__result");
+            }
+            ParameterBuilder pbInstance = null;
             if (!IsStatic)
             {
-                ParameterBuilder pb = mb.DefineParameter(1, ParameterAttributes.Optional, "myThis");
-                pb.SetConstant(null);
+                pbInstance = mb.DefineParameter((returnValue != null ? 2 : 1), ParameterAttributes.Optional, "__instance");
+                pbInstance.SetConstant(null);
             }
             ilGen = mb.GetILGenerator(256);
 
-            ilGen.DeclareLocal(typeof(ManagedHook)); // Note : local variable : monHook
-            ilGen.DeclareLocal(typeof(List<object>)); // Note : local variable : listParameters
-            ilGen.DeclareLocal(typeof(bool)); // Note : local variable for "if"
-            if (ReturnType != typeof(void))
-            {
-                ilGen.DeclareLocal(typeof(object));
-            }
+            LocalBuilder myHook = ilGen.DeclareLocal(typeof(ManagedHook)); // Note : local variable : monHook
+            LocalBuilder listParameters = ilGen.DeclareLocal(typeof(List<object>)); // Note : local variable : listParameters
+            LocalBuilder ifEnabled = ilGen.DeclareLocal(typeof(bool)); // Note : local variable for "if"
+
             Label label1 = ilGen.DefineLabel();
             Label label2 = ilGen.DefineLabel();
             Label label3 = ilGen.DefineLabel();
@@ -436,22 +303,22 @@ namespace HookManagerCore.Modeles
             ilGen.Emit(OpCodes.Call, typeof(HookPool).GetMethod("GetInstance", BindingFlags.Public | BindingFlags.Static));
             ilGen.Emit(OpCodes.Ldc_I4, _numHook);
             ilGen.Emit(OpCodes.Callvirt, typeof(HookPool).GetMethod(nameof(HookPool.ReturnHook), [typeof(int)]));
-            ilGen.Emit(OpCodes.Stloc_0);
+            ilGen.Emit(OpCodes.Stloc, myHook);
             // List<object> listParameters = new();
             ilGen.Emit(OpCodes.Newobj, typeof(List<object>).GetConstructor([]));
-            ilGen.Emit(OpCodes.Stloc_1);
+            ilGen.Emit(OpCodes.Stloc, listParameters);
             // if (monHook.Actif) // Note : If false, goto label1
             ilGen.Emit(OpCodes.Ldloc_0);
             ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetProperty(nameof(Enabled)).GetGetMethod());
             ilGen.Emit(OpCodes.Ldc_I4_0);
             ilGen.Emit(OpCodes.Ceq);
-            ilGen.Emit(OpCodes.Stloc_2);
-            ilGen.Emit(OpCodes.Ldloc_2);
+            ilGen.Emit(OpCodes.Stloc, ifEnabled);
+            ilGen.Emit(OpCodes.Ldloc, ifEnabled);
             ilGen.Emit(OpCodes.Brtrue_S, label1);
             if (!IsStatic)
             {
                 // listParameters.Add(myThis); // Note : myThis is the first parameter of this method
-                ilGen.Emit(OpCodes.Ldloc_1);
+                ilGen.Emit(OpCodes.Ldloc, listParameters);
                 ilGen.Emit(OpCodes.Ldarg_0);
                 ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.Add)));
             }
@@ -461,7 +328,7 @@ namespace HookManagerCore.Modeles
                 int numParam = 1;
                 foreach (ParameterInfo pi in MethodParameters)
                 {
-                    ilGen.Emit(OpCodes.Ldloc_1);
+                    ilGen.Emit(OpCodes.Ldloc, listParameters);
                     ilGen.Emit(OpCodes.Ldarg, numParam++);
                     ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.Add)));
                 }
@@ -475,7 +342,7 @@ namespace HookManagerCore.Modeles
                     for (int i = MethodParameters.Length + 1; i <= _methodBefore.GetParameters().Length - 1; i++)
                     {
                         // listParameters.Add(null);
-                        ilGen.Emit(OpCodes.Ldloc_1);
+                        ilGen.Emit(OpCodes.Ldloc, listParameters);
                         ilGen.Emit(OpCodes.Ldnull);
                         ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.Add)));
                     }
@@ -488,7 +355,7 @@ namespace HookManagerCore.Modeles
                     for (int i = MethodParameters.Length + 1; i <= _methodTo.GetParameters().Length - 1; i++)
                     {
                         // listParameters.Add(null);
-                        ilGen.Emit(OpCodes.Ldloc_1);
+                        ilGen.Emit(OpCodes.Ldloc, listParameters);
                         ilGen.Emit(OpCodes.Ldnull);
                         ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.Add)));
                     }
@@ -497,39 +364,39 @@ namespace HookManagerCore.Modeles
 
             ilGen.MarkLabel(label1);
             // if (monHook.Actif) // Note : If false, goto label2
-            ilGen.Emit(OpCodes.Ldloc_0);
+            ilGen.Emit(OpCodes.Ldloc, myHook);
             ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetProperty(nameof(Enabled)).GetGetMethod());
             ilGen.Emit(OpCodes.Ldc_I4_0);
             ilGen.Emit(OpCodes.Ceq);
-            ilGen.Emit(OpCodes.Stloc_2);
-            ilGen.Emit(OpCodes.Ldloc_2);
+            ilGen.Emit(OpCodes.Stloc, ifEnabled);
+            ilGen.Emit(OpCodes.Ldloc, ifEnabled);
             ilGen.Emit(OpCodes.Brtrue_S, label2);
             if (_isDecorativeMethod)
             {
                 if (_methodBefore != null)
                 {
                     // monHook.MethodeAvant.Invoke(<Arg>, listParameters.ToArray()); // Note : Arg is null, if static, else contains the instance of the object (myThis, first parameter of this method)
-                    ilGen.Emit(OpCodes.Ldloc_0);
+                    ilGen.Emit(OpCodes.Ldloc, myHook);
                     ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetProperty(nameof(MethodBefore)).GetGetMethod());
                     if (!IsStatic)
                         ilGen.Emit(OpCodes.Ldarg_0);
                     else
                         ilGen.Emit(OpCodes.Ldnull);
-                    ilGen.Emit(OpCodes.Ldloc_1);
+                    ilGen.Emit(OpCodes.Ldloc, listParameters);
                     ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.ToArray), Type.EmptyTypes));
                     ilGen.Emit(OpCodes.Callvirt, typeof(MethodBase).GetMethod(nameof(MethodBase.Invoke), [typeof(object), typeof(object[])]));
                     ilGen.Emit(OpCodes.Pop);
                 }
                 // monHook.AppelMethodeOriginale(<myThis>, listParameters.ToArray());  // Note : set <myThis> if it's not a static method, else <null>
                 // ou monHook.AppelMethodeOriginale(<myThis>, object[]null);     // If the method has no parameter
-                ilGen.Emit(OpCodes.Ldloc_0);
+                ilGen.Emit(OpCodes.Ldloc, myHook);
                 if (!IsStatic)
                     ilGen.Emit(OpCodes.Ldarg_0);
                 else
                     ilGen.Emit(OpCodes.Ldnull);
                 if (MethodParameters.Length > 0)
                 {
-                    ilGen.Emit(OpCodes.Ldloc_1);
+                    ilGen.Emit(OpCodes.Ldloc, listParameters);
                     ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.ToArray), Type.EmptyTypes));
                 }
                 else
@@ -537,19 +404,19 @@ namespace HookManagerCore.Modeles
                 ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetMethod(nameof(CallOriginalMethod), BindingFlags.Instance | BindingFlags.Public));
                 // We keep the return of method, if the original method return a value (is not a void)
                 if (ReturnType != typeof(void))
-                    ilGen.Emit(OpCodes.Stloc_3);
+                    ilGen.Emit(OpCodes.Starg, returnValue.Position);
                 else
                     ilGen.Emit(OpCodes.Pop);
                 if (_methodAfter != null)
                 {
                     // monHook.MethodeApres.Invoke(<Arg>, listParameters.ToArray());
-                    ilGen.Emit(OpCodes.Ldloc_0);
+                    ilGen.Emit(OpCodes.Ldloc, myHook);
                     ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetProperty(nameof(MethodAfter)).GetGetMethod());
                     if (!IsStatic)
                         ilGen.Emit(OpCodes.Ldarg_0);
                     else
                         ilGen.Emit(OpCodes.Ldnull);
-                    ilGen.Emit(OpCodes.Ldloc_1);
+                    ilGen.Emit(OpCodes.Ldloc, listParameters);
                     ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.ToArray), Type.EmptyTypes));
                     ilGen.Emit(OpCodes.Callvirt, typeof(MethodBase).GetMethod(nameof(MethodBase.Invoke), [typeof(object), typeof(object[])]));
                     ilGen.Emit(OpCodes.Pop);
@@ -558,18 +425,18 @@ namespace HookManagerCore.Modeles
             else
             {
                 // monHook.ToMethode.Invoke(<Arg>, listParameters.ToArray()); // Note : Arg is null if static, else fill to myThis (first parameter of this method, the instance of the object)
-                ilGen.Emit(OpCodes.Ldloc_0);
+                ilGen.Emit(OpCodes.Ldloc, myHook);
                 ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetProperty(nameof(ToMethod)).GetGetMethod());
                 if (!IsStatic)
                     ilGen.Emit(OpCodes.Ldarg_0);
                 else
                     ilGen.Emit(OpCodes.Ldnull);
-                ilGen.Emit(OpCodes.Ldloc_1);
+                ilGen.Emit(OpCodes.Ldloc, listParameters);
                 ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.ToArray), Type.EmptyTypes));
                 ilGen.Emit(OpCodes.Callvirt, typeof(MethodBase).GetMethod(nameof(MethodBase.Invoke), [typeof(object), typeof(object[])]));
                 // We keep the return of method, if the original method return a value (is not a void)
                 if (ReturnType != typeof(void))
-                    ilGen.Emit(OpCodes.Stloc_3);
+                    ilGen.Emit(OpCodes.Starg, returnValue.Position);
                 else
                     ilGen.Emit(OpCodes.Pop);
             }
@@ -580,20 +447,20 @@ namespace HookManagerCore.Modeles
             {
                 // monHook.AppelMethodeOriginale(<myThis>, listParameters.ToArray());  // Note : set <myThis> if it's not a static method, else <null>
                 // or monHook.AppelMethodeOriginale(<myThis>, object[]null);     // If the method has no parameter
-                ilGen.Emit(OpCodes.Ldloc_0);
+                ilGen.Emit(OpCodes.Ldloc, myHook);
                 if (!IsStatic)
                     ilGen.Emit(OpCodes.Ldarg_0);
                 else
                     ilGen.Emit(OpCodes.Ldnull);
                 if (MethodParameters.Length > 0)
                 {
-                    ilGen.Emit(OpCodes.Ldloc_1);
+                    ilGen.Emit(OpCodes.Ldloc, listParameters);
                     ilGen.Emit(OpCodes.Callvirt, typeof(List<object>).GetMethod(nameof(List<object>.ToArray), Type.EmptyTypes));
                 }
                 else
                     ilGen.Emit(OpCodes.Ldnull);
                 ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetMethod(nameof(CallOriginalMethod), BindingFlags.Instance | BindingFlags.Public));
-                ilGen.Emit(OpCodes.Stloc_3);
+                ilGen.Emit(OpCodes.Starg, returnValue.Position);
             }
             else
             {
@@ -608,16 +475,16 @@ namespace HookManagerCore.Modeles
                         ilGen.Emit(OpCodes.Ldarg, numParam++);
                     }
                 }
-                ilGen.Emit(OpCodes.Call, mbParent);
+                ilGen.Emit(OpCodes.Callvirt, typeof(ManagedHook).GetMethod(nameof(CallOriginalMethod), BindingFlags.Instance | BindingFlags.Public));
                 if (ReturnType != typeof(void))
-                    ilGen.Emit(OpCodes.Stloc_3);
+                    ilGen.Emit(OpCodes.Starg, returnValue.Position);
             }
             // return <Resultat>; // Note : we return the result previously keep, if not a void
             ilGen.MarkLabel(label3);
             // End, we return the result previously keep, if not a void
             if (ReturnType != typeof(void))
             {
-                ilGen.Emit(OpCodes.Ldloc_3);
+                ilGen.Emit(OpCodes.Starg, returnValue.Position);
             }
             // Note : End of method
             ilGen.Emit(OpCodes.Ret);
@@ -643,8 +510,8 @@ namespace HookManagerCore.Modeles
             // Méthode passerelle
             if ((!Debugger.IsAttached) || (!HookPool.GetInstance().ModeInternalDebug))
                 corps.AppendLine("[System.Diagnostics.DebuggerNonUserCode()]");
-            corps.Append("private static ");
-            corps.Append($"{(ReturnType == typeof(void) ? "void" : "object")} {HookPool.METHOD_NAME}{_numHook}({(IsStatic ? "" : "object myThis = null")}");
+            corps.Append("private static bool ");
+            corps.Append($"{HookPool.METHOD_NAME}{_numHook}({(ReturnType == typeof(void) ? "" : "ref object __result")}{(IsStatic ? "" : $"{(ReturnType == typeof(void) ? "" : ", ")}object __instance = null")}");
             if (MethodParameters.Length > 0)
                 for (int i = 0; i < MethodParameters.Length; i++)
                 {
@@ -659,7 +526,7 @@ namespace HookManagerCore.Modeles
             corps.AppendLine($"if (myHook.{nameof(Enabled)})");
             corps.AppendLine("{");
             if (!IsStatic)
-                corps.AppendLine("param.Add(myThis);");
+                corps.AppendLine("param.Add(__instance);");
             corps.AppendLine("}");
 
             if (MethodParameters.Length > 0)
@@ -681,13 +548,13 @@ namespace HookManagerCore.Modeles
             if (_isDecorativeMethod)
             {
                 if (_methodBefore != null)
-                    corps.AppendLine($"myHook.{nameof(MethodBefore)}.Invoke({(IsStatic ? "null" : "myThis")}, param.ToArray());");
+                    corps.AppendLine($"myHook.{nameof(MethodBefore)}.Invoke({(IsStatic ? "null" : "__instance")}, param.ToArray());");
                 if (ReturnType != typeof(void))
                     corps.Append("object retour = ");
-                corps.AppendLine($"myHook.{nameof(CallOriginalMethod)}({(IsStatic ? "null" : "myThis")}, {(MethodParameters.Length > 0 ? ", param.ToArray()" : "null")});");
+                corps.AppendLine($"myHook.{nameof(CallOriginalMethod)}({(IsStatic ? "null" : "__instance")}, {(MethodParameters.Length > 0 ? ", param.ToArray()" : "null")});");
                 if (_methodAfter != null)
                 {
-                    corps.AppendLine($"myHook.{nameof(MethodAfter)}.Invoke({(IsStatic ? "null" : "myThis")}, param.ToArray());");
+                    corps.AppendLine($"myHook.{nameof(MethodAfter)}.Invoke({(IsStatic ? "null" : "__instance")}, param.ToArray());");
                 }
                 if (ReturnType != typeof(void))
                     corps.AppendLine("return retour;");
@@ -695,23 +562,16 @@ namespace HookManagerCore.Modeles
             else
             {
                 if (ReturnType != typeof(void))
-                    corps.Append("return ");
-                corps.AppendLine($"myHook.{nameof(ToMethod)}.Invoke({(IsStatic ? "null" : "myThis")}, param.ToArray());");
+                    corps.Append("__result = ");
+                corps.AppendLine($"myHook.{nameof(ToMethod)}.Invoke({(IsStatic ? "null" : "__instance")}, param.ToArray());");
             }
             corps.AppendLine("}");
             corps.AppendLine("else");
             corps.AppendLine("{");
             if (ReturnType != typeof(void))
-                corps.Append("return ");
-            if (IsConstructor)
-            {
-                corps.Append($"myHook.{nameof(CallOriginalMethod)}");
-            }
-            else
-            {
-                corps.Append($"{HookPool.PARENT_METHOD_NAME}{_numHook}");
-            }
-            corps.Append($"({(IsStatic && !IsConstructor ? "" : "myThis")}");
+                corps.Append("__result = ");
+            corps.Append($"myHook.{nameof(CallOriginalMethod)}");
+            corps.Append($"({(IsStatic && !IsConstructor ? "" : "__instance")}");
             if (MethodParameters.Length > 0)
                 for (int i = 0; i < MethodParameters.Length; i++)
                 {
@@ -721,30 +581,7 @@ namespace HookManagerCore.Modeles
                 }
             corps.AppendLine(");");
             corps.AppendLine("}");
-            corps.AppendLine("}");
-            corps.AppendLine();
-
-            // Méthode parente
-            if ((!Debugger.IsAttached) || (!HookPool.GetInstance().ModeInternalDebug))
-                corps.AppendLine("[System.Diagnostics.DebuggerNonUserCode()]");
-            corps.Append("private static ");
-            corps.Append($"{(ReturnType == typeof(void) ? "void" : "object")} {HookPool.PARENT_METHOD_NAME}{_numHook}(");
-            if (!IsStatic)
-                corps.Append("object myThis");
-            int j = 0;
-            if (MethodParameters.Length > 0)
-                for (j = 0; j < MethodParameters.Length; j++)
-                {
-                    if ((j > 0) || (!IsStatic))
-                        corps.Append(", ");
-                    corps.Append(MethodParameters[j].ParameterType.ToString().Replace("+", ".") + $" param{(j + 1)} = null");
-                }
-            if ((_isDecorativeMethod) && (ReturnType != typeof(void)) && !IsConstructor)
-                corps.Append($", object param{j + 1} = null");
-
-            corps.AppendLine(")");
-            corps.AppendLine("{");
-            corps.AppendLine(@"throw new System.Exception(""Unable to call the original method"");");
+            corps.AppendLine("return false;");
             corps.AppendLine("}");
 
             corps.AppendLine("}");

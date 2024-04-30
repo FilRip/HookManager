@@ -1,13 +1,9 @@
-﻿using System;
-using System.Runtime.Serialization;
-
-namespace HookManagerCore.Exceptions
+﻿namespace HookManagerCore.Exceptions
 {
     /// <summary>
     /// Erreur, le type, ou la méthode que vous demandez de remplacer, n'existe pas/n'a pas été trouvé<br/>
     /// Assurez-vous de l'ortographe, et que l'assembly a bien été chargé avant d'appeler le remplacement de la méthode
     /// </summary>
-    [Serializable()]
     public class TypeOrMethodNotFoundException : HookManagerException
     {
         private readonly string _type, _methode;
@@ -56,8 +52,5 @@ namespace HookManagerCore.Exceptions
                 return _methode;
             }
         }
-
-        /// <inheritdoc/>
-        protected TypeOrMethodNotFoundException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

@@ -1,13 +1,10 @@
-﻿using System;
-using System.Reflection;
-using System.Runtime.Serialization;
+﻿using System.Reflection;
 
 namespace HookManagerCore.Exceptions
 {
     /// <summary>
     /// Erreur plateformes de compilation différentes entres les assembly de la méthode à substituer et la méthode de substitution
     /// </summary>
-    [Serializable()]
     public class PlatformAssemblyDifferentException : HookManagerException
     {
         private readonly ProcessorArchitecture _paFrom, _paTo;
@@ -52,8 +49,5 @@ namespace HookManagerCore.Exceptions
                 return _paTo;
             }
         }
-
-        /// <inheritdoc/>
-        protected PlatformAssemblyDifferentException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

@@ -1,13 +1,9 @@
-﻿using System;
-using System.Runtime.Serialization;
-
-namespace HookManagerCore.Exceptions
+﻿namespace HookManagerCore.Exceptions
 {
     /// <summary>
     /// Erreur, la "nouvelle" méthode de remplacement doit avoir un premier paramètre du même type que l'objet contenant la méthode remplacée (ou un type héritant), et en plus : au moins le même nombre de paramètre que la méthode qu'elle remplace (elle peut en avoir plus sans problèmes)<br/>
     /// Si la méthode remplacée est static, il n'y a pas besoin du premier paramètre (type de l'objet remplacé) puis ce qu'une static n'a pas d'instance d'objet lié.
     /// </summary>
-    [Serializable()]
     public class MissingDefaultArgumentException : HookManagerException
     {
         private readonly string _nomMethode;
@@ -56,8 +52,5 @@ namespace HookManagerCore.Exceptions
                 return _gac;
             }
         }
-
-        /// <inheritdoc/>
-        protected MissingDefaultArgumentException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 }

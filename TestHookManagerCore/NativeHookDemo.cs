@@ -10,11 +10,11 @@ namespace TestHookManagerCore
     public class NativeHookDemo
     {
         [DllImport("user32.dll", SetLastError = true)]
-        private static extern int MessageBoxA(IntPtr hwnd, String text, String title, uint type);
+        private static extern int MessageBoxA(IntPtr hwnd, string text, string title, uint type);
 
         public void Main()
         {
-            NativeHook nativeHook;
+            NativeHook nativeHook = null;
 
             // On substitue la méthode native user32.MessageBoxA. Elle a 2 signatures différentes selon si l'on est en 32 ou 64 bits
             if (Environment.Is64BitProcess)

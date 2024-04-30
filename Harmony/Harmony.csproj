@@ -6,8 +6,6 @@
 		<Company>Andreas Pardeike</Company>
 		<Copyright>Copyright © 2016</Copyright>
 		<Description>A general non-destructive patch library for .NET and Mono modules</Description>
-		<PackageId>Lib.Harmony</PackageId>
-		<PackageId Condition="$(Configuration.EndsWith('Thin'))">Lib.Harmony.Thin</PackageId>
 		<Authors>Andreas Pardeike</Authors>
 		<AssemblyName>Harmony</AssemblyName>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -17,7 +15,6 @@
 		<Version>$(HarmonyVersion)</Version>
 		<AssemblyVersion>$(HarmonyVersion)</AssemblyVersion>
 		<FileVersion>$(HarmonyVersion)</FileVersion>
-		<PackageVersion>$(HarmonyVersion)$(HarmonyPrerelease)</PackageVersion>
 		<InformationalVersion>$(HarmonyVersion)$(HarmonyPrerelease)</InformationalVersion>
 		<NoWarn>$(NoWarn);SYSLIB0011;NU5131</NoWarn>
 		<Configurations>Debug;Release</Configurations>
@@ -44,7 +41,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="MonoMod.Core" Version="1.1.0" PrivateAssets="all" />
+		<PackageReference Include="MonoMod.Core" Version="1.1.0" />
 	</ItemGroup>
 
 	<ItemGroup>
